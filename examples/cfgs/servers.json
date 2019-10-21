@@ -1,0 +1,61 @@
+{
+    "development": {
+        "clusters": {
+            "http": [
+                {"port": 8080}
+            ],
+            "home": [
+                {"port": 8081, "links": ["chat"]},
+                {"port": 8082, "links": ["chat"]}
+            ],
+            "chat": [
+                {"port": 8083, "links": ["home"]},
+                {"port": 8084, "links": ["home"]}
+            ]
+        },
+        "defaults": {
+            "host": "127.0.0.1",
+            "inip": "127.0.0.1",
+            "PM2config": {
+                "name": "examples",
+                "script": "app.js",
+                "instances": 1,
+                "exec_mode": "cluster",
+                "out_file": "${opt:bootDir}/logs/pm2-out.log",
+                "error_file": "${opt:bootDir}/logs/pm2-error.log"
+            }
+        }
+    },
+    "production": {
+        "clusters": {
+            "http": [
+                {"port": 8080}
+            ],
+            "home": [
+                {"port": 8081, "links": ["chat"]},
+                {"port": 8082, "links": ["chat"]}
+            ],
+            "chat": [
+                {"port": 8083, "links": ["home"]},
+                {"port": 8084, "links": ["home"]}
+            ]
+        },
+        "defaults": {
+            "host": "${opt:hostName}",
+            "inip": "${opt:hostName}",
+            "ssls": {
+                "key": "${opt:bootDir}/cfgs/localhost.key",
+                "cert": "${opt:bootDir}/cfgs/localhost.pem"
+            },
+            "PM2config": {
+                "name": "examples",
+                "script": "app.js",
+                "instances": 1,
+                "exec_mode": "cluster",
+                "out_file": "${opt:bootDir}/logs/pm2-out.log",
+                "error_file": "${opt:bootDir}/logs/pm2-error.log"
+            }
+        },
+        "hostBind": true
+    }
+}

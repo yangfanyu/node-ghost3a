@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>chat Room</title>
+    <script src="/crypto.js"></script>
+    <script src="/wssnet.js"></script>
+    <style type="text/css">
+        .item {
+            font-size: 0.5em;
+            margin-top: 0.3em;
+            color: #000000;
+        }
+
+        .item-red {
+            font-size: 0.5em;
+            margin-top: 0.3em;
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body style="padding: 1em">
+<div style="text-align: center">聊天内容</div>
+<div id="context"
+     style="border:1px solid #000; height: 10em; padding: 0.3em 0.5em; overflow-x: auto; overflow-y: auto;"></div>
+<div style="text-align: center; margin-top: 1em">发送内容</div>
+<textarea id="edit_context" style="width: 100%; height: 3em;"></textarea>
+<button onclick="doConnect(8081)">连接到8081端口</button>
+<button onclick="doConnect(8082)">连接到8082端口</button>
+<button onclick="doDisconnect()">断开连接</button>
+<br/>
+<input type="text" width="8em" placeholder="输入uid" id="login_uid"/>
+<button onclick="doLogin()">用户登录</button>
+<button onclick="doLogout()">退出登录</button>
+<br/>
+<input type="text" width="8em" placeholder="输入gid" id="room_gid"/>
+<button onclick="doJoinRoom()">加入群组</button>
+<button onclick="doQuitRoom()">退出群组</button>
+<br/>
+P2P消息：
+<input type="text" width="8em" placeholder="输入uid" id="p2p_uid"/>
+<button onclick="doSendP2P(true)">通过集群组发送</button>
+<button onclick="doSendP2P(false)">由所连节点发送</button>
+<br/>
+群组消息：
+<input type="text" width="8em" placeholder="输入gid" id="grp_gid"/>
+<button onclick="doSendGrp(true)">通过集群组发送</button>
+<button onclick="doSendGrp(false)">由所连节点发送</button>
+<br/>
+广播消息：
+<button onclick="doSendAll(true)">通过集群组发送</button>
+<button onclick="doSendAll(false)">由所连节点发送</button>
+<br/>
+<br/>
+<br/>
+测试文件上传
+<form action="/upload" method="post" enctype="multipart/form-data">
+    <input type="file" id="file" name="file" value="浏览图片"/>
+    <input type="text" id="info1" name="info1" placeholder="附加信息1"/>
+    <input type="text" id="info2" name="info2" placeholder="附加信息2"/>
+    <input type="submit" value="提交"/>
+</form>
+<script>
+    var client;
+
+    function doConnect(port) {
+        doDisconnect();
+        client = new wssnet.Ghost3a(location.protocol + '//' + location.hostname + ":" + port, '123', true);
+        client.setLogLevel(wssnet.Ghost3a.LOG_LEVEL_ALL);
+        client.connect(function () {
+            appendMessage('到' + port + '的连接已经建立');
+        }, function (code, reason) {
+            appendMessage('到' + port + '的连接已经断开, ' + code + ':' + reason, true);
+        }, function (err) {
+            appendMessage('到' + port + '的连接出错' + err.toString(), true);
+        }, function (count) {
+            appendMessage('第' + count + '次尝试到' + port + '的重连', true);
+        });
+        client.addListener('onP2PMessage', false, (message) => {
+            appendMessage('onP2PMessage: ' + message);
+        });
+        client.addListener('onGRPMessage', false, (message) => {
+            appendMessage('onGRPMessage: ' + message);
+        });
+        client.addListener('onALLMessage', false, (message) => {
+            appendMessage('onALLMessage: ' + message);
+        });
+    }
+
+    function doDisconnect() {
+        if (client) {
+            client.disconnect();
+            appendMessage('旧的连接已经销毁', true);
+            client = null;
+        }
+    }
+
+    function appendMessage(text, red) {
+        var context = document.getElementById("context");
+        var tag = document.createElement('div');
+        tag.className = red ? 'item-red' : 'item';
+        tag.innerHTML = new Date().toLocaleString() + '<br>' + text;
+        context.appendChild(tag);
+        context.scrollTop = context.scrollHeight;
+    }
+
+    function doLogin() {
+        if (!client) return;
+        client.request('login', {
+            uid: document.getElementById('login_uid').value.trim()
+        }, onResponseOk, onResponseErr);
+    }
+
+    function doLogout() {
+        if (!client) return;
+        client.request('logout', {}, onResponseOk, onResponseErr);
+    }
+
+    function doJoinRoom() {
+        if (!client) return;
+        client.request('joinRoom', {
+            gid: document.getElementById('room_gid').value.trim()
+        }, onResponseOk, onResponseErr);
+    }
+
+    function doQuitRoom() {
+        if (!client) return;
+        client.request('quitRoom', {
+            gid: document.getElementById('room_gid').value.trim()
+        }, onResponseOk, onResponseErr);
+    }
+
+    function doSendP2P(global) {
+        if (!client) return;
+        client.request(global ? 'chat.sendP2P' : 'sendP2P', {
+            uid: document.getElementById('p2p_uid').value.trim(),
+            text: document.getElementById('edit_context').value.trim(),
+        }, onResponseOk, onResponseErr);
+    }
+
+    function doSendGrp(global) {
+        if (!client) return;
+        client.request(global ? 'chat.sendGRP' : 'sendGRP', {
+            gid: document.getElementById('grp_gid').value.trim(),
+            text: document.getElementById('edit_context').value.trim(),
+        }, onResponseOk, onResponseErr);
+    }
+
+    function doSendAll(global) {
+        if (!client) return;
+        client.request(global ? 'chat.sendALL' : 'sendALL', {
+            text: document.getElementById('edit_context').value.trim()
+        }, onResponseOk, onResponseErr);
+    }
+
+    function onResponseOk(resp) {
+        appendMessage(resp.data);
+    }
+
+    function onResponseErr(resp) {
+        appendMessage(resp.data, true);
+    }
+</script>
+</body>
+</html>

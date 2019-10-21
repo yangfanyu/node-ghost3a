@@ -1,0 +1,46 @@
+{
+    "development": {
+        "appenders": {
+            "stdout": {
+                "type": "stdout", "layout": {"type": "pattern", "pattern": "%[%d %p - %f:%l [%X{env}-%X{name}-%X{port}:%c]%] %m"}
+            },
+            "server": {
+                "type": "file", "filename": "${opt:appDir}/logs/${opt:appEnv}-server-${opt:appName}-${opt:appHost}-${opt:appPort}.log",
+                "maxLogSize": 8388608, "layout": {"type": "basic"}, "backups": 5
+            },
+            "global": {
+                "type": "file", "filename": "${opt:appDir}/logs/${opt:appEnv}-global-${opt:appName}-${opt:appHost}-${opt:appPort}.log",
+                "maxLogSize": 8388608, "layout": {"type": "basic"}, "backups": 5
+            }
+        },
+        "categories": {
+            "default": {"appenders": ["stdout"], "level": "debug", "enableCallStack": true},
+            "server": {"appenders": ["stdout", "server"], "level": "debug", "enableCallStack": true},
+            "global": {"appenders": ["stdout", "global"], "level": "debug", "enableCallStack": true}
+        },
+        "pm2": true,
+        "disableClustering": true
+    },
+    "production": {
+        "appenders": {
+            "stdout": {
+                "type": "stdout", "layout": {"type": "pattern", "pattern": "%[%d %p - %f:%l [%X{env}-%X{name}-%X{port}:%c]%] %m"}
+            },
+            "server": {
+                "type": "file", "filename": "${opt:appDir}/logs/${opt:appEnv}-server-${opt:appName}-${opt:appHost}-${opt:appPort}.log",
+                "maxLogSize": 8388608, "layout": {"type": "basic"}, "backups": 5
+            },
+            "global": {
+                "type": "file", "filename": "${opt:appDir}/logs/${opt:appEnv}-global-${opt:appName}-${opt:appHost}-${opt:appPort}.log",
+                "maxLogSize": 8388608, "layout": {"type": "basic"}, "backups": 5
+            }
+        },
+        "categories": {
+            "default": {"appenders": ["stdout"], "level": "debug", "enableCallStack": true},
+            "server": {"appenders": ["stdout", "server"], "level": "debug", "enableCallStack": true},
+            "global": {"appenders": ["stdout", "global"], "level": "debug", "enableCallStack": true}
+        },
+        "pm2": true,
+        "disableClustering": true
+    }
+}
