@@ -42,10 +42,8 @@ class EnvContext {
      * @param appPort {number} 节点所监听的端口号
      * @param appSSLs {{key:string,cert:string}} 节点SSL证书路径
      * @param appLinks {string[]} 本节点需要连接的其它节点类型名称
-     * @param appNodes {Object.<string,{host:string,inip:string,port:number,ssls:boolean}>} 全部的节点
+     * @param appNodes {Object.<string,{host:string,inip:string,port:number,ssls:boolean}[]>} 全部的节点
      * @param encode {string} 编码默认值为utf8
-     *
-     * @property {string} _encode
      */
     constructor(appDir, appEnv, appName, appHost, appInIP, appPort, appSSLs = undefined, appLinks = undefined, appNodes = undefined, encode = 'utf8') {
         this._appDir = appDir;
@@ -57,6 +55,7 @@ class EnvContext {
         this._appSSLs = appSSLs;
         this._appLinks = appLinks;
         this._appNodes = appNodes;
+        /** @type {string} **/
         this._encode = encode;
         //其它属性
         this._logcfgs = null;//log4js的配置文件信息
@@ -234,7 +233,7 @@ class EnvContext {
         return this._appLinks;
     }
     /**
-     * @return {Object<string, {host: string, inip: string, port: number, ssls: boolean}>}
+     * @return {Object<string, {host: string, inip: string, port: number, ssls: boolean}[]>}
      */
     get nodes() {
         return this._appNodes;
