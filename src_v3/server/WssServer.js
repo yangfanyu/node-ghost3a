@@ -522,8 +522,9 @@ class WssServer {
     _onWebSocketConnection(socket, request) {
         let session = new WssSession(socket, this._context.getIPV4({headers: request.headers, ip: request.connection.remoteAddress}));
         this._socketMap[session.id] = session;//绑定到_socketMap
+        socket.binaryType = 'arraybuffer';//指定读取格式为arraybuffer
         socket.on('message', (data) => {
-            this._onWebSocketMessage(session, data instanceof Buffer ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) : data);
+            this._onWebSocketMessage(session, data);
         });
         socket.on('close', (code, reason) => {
             this._logger.info('on websocket close:', session.ip, session.id, session.uid, code, reason);
