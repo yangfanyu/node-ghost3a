@@ -232,7 +232,9 @@ class Ghost3a {
         list.add(reqId);
       }
     });
-    for (int i = 0; i < list.length; i++) _requests.remove(list[i]);
+    for (int i = 0; i < list.length; i++) {
+      _requests.remove(list[i]);
+    }
     //心跳和断线重连
     if (isConnected()) {
       if (_timerInc % _heartick == 0) {
@@ -385,10 +387,10 @@ class Ghost3a {
           list.add(item);
         }
       }
-      while (list.length > 0) {
+      while (list.isNotEmpty) {
         listeners.remove(list.removeLast());
       }
-      if (listeners.length == 0) {
+      if (listeners.isEmpty) {
         _listeners.remove(route);
       }
     }

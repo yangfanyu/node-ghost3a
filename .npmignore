@@ -1,7 +1,8 @@
-.DS_Store
 .idea/
 .dart_tool/
-example/logs/
-example/files/
+example/
+lib/
 node_modules/
 .packages
+pubspec.lock
+pubspec.yaml

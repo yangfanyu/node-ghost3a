@@ -2,6 +2,8 @@
  
   Lightweight, web server, websocket server, websocket client. Cluster support. Simple and easy to use.
 
+  https://github.com/yangfanyu/node-ghost3a
+  
 # Install 
  
   PM2 management process is recommended:
@@ -32,7 +34,7 @@
   Edit dependencies in _pubspec.yaml_
   ```
      dependencies:
-       wssnet_ghost3a: ^1.0.0
+       wssnet_ghost3a: ^3.0.52
   ```  
   
   API usage is the same as index.html in example.
