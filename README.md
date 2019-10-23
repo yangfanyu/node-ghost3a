@@ -12,15 +12,30 @@
   
   `npm install node-ghost3a`
   
-# See the examples
+# Server and client example
 
-  `git clone https://github.com/yangfanyu/node-ghost3a.git`
+  ```
+  git clone https://github.com/yangfanyu/node-ghost3a.git
   
-  `cd node-ghost3a/examples`
+  cd node-ghost3a/example
   
-  `pm2 start ecosystem.config.js --env development` or `pm2 start ecosystem.config.js --env production`
+  pm2 start ecosystem.config.js --env development
+  ```
   
-  Then browse `http://localhost:8080/` or `https://localhost:8080/` in your **modern browser**.
+  Then browse `http://localhost:8080/` in your **modern browser**.
+  
+  You can use `pm2 log` to see the server logs.
+  
+
+# Client for flutter or dart
+  
+  Edit dependencies in _pubspec.yaml_
+  ```
+     dependencies:
+       wssnet_ghost3a: ^1.0.0
+  ```  
+  
+  API usage is the same as index.html in example.
   
 # API document
 

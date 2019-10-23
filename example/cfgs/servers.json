@@ -17,7 +17,7 @@
             "host": "127.0.0.1",
             "inip": "127.0.0.1",
             "PM2config": {
-                "name": "examples",
+                "name": "example",
                 "script": "app.js",
                 "instances": 1,
                 "exec_mode": "cluster",
@@ -48,7 +48,7 @@
                 "cert": "${opt:bootDir}/cfgs/localhost.pem"
             },
             "PM2config": {
-                "name": "examples",
+                "name": "example",
                 "script": "app.js",
                 "instances": 1,
                 "exec_mode": "cluster",

@@ -1,5 +1,6 @@
 'use strict';
-const {EnvContext, MongoMan} = require('../ghost3a');
+const {EnvContext, MongoMan, WssClient} = require('../ghost3a');
+const Ghost3a = WssClient.Ghost3a;
 
 function testMongoMan() {
     let envContext = new EnvContext(__dirname, 'development', 'test', 'localhost', '', 8080);
@@ -67,4 +68,24 @@ function testMongoMan() {
     });
 }
 
-testMongoMan();
+function testWssClient() {
+    const net = new Ghost3a('http://localhost:8082/', '123', true, undefined, 3);
+    net.setLogLevel(Ghost3a.LOG_LEVEL_ALL);
+    net.connect((params) => {
+        console.log('onopen');
+    }, (code, reason, params) => {
+        console.log('onclose', code, reason);
+    }, (error) => {
+        console.log('onerror', error);
+    }, (count, params) => {
+        console.log('onretry', count);
+    }, (second, delay, params) => {
+        //    print('onsecond $second $delay');
+    });
+    setTimeout(() => {
+        net.disconnect();
+    }, 60 * 1000);
+}
+
+// testMongoMan();
+testWssClient();
