@@ -331,7 +331,7 @@ class Ghost3a {
 
   void _safeClose(int code, String reason) {
     if (_socket != null) {
-      _socket.close(code, reason).catchError(() {});
+      _socket.close(code, reason).catchError((e) {});
       _socket = null;
     }
   }
