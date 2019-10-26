@@ -43,7 +43,7 @@ class WebServer {
      * @param config.bodyParserForm {Object} cookie-parser.urlencoded插件配置，null不启用该插件，参考依赖库 https://github.com/expressjs/body-parser
      * @param config.uploadKey {string} 上传表单'文件字段'，本类封装的是单文件上传功能，批量上传可同时创建多个请求
      * @param config.uploadDir {string} 上传文件的保存位置
-     * @param config.uploadMimeTypes: {Object} 允许上传的mimeType，默认为{'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/bmp': 'bmp'}
+     * @param config.uploadMimeTypes: {Object} 允许上传的mimeType，默认为{'image/jpg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/bmp': 'bmp'}
      */
     constructor(context, category, config = {}) {
         this._context = context;
@@ -56,7 +56,7 @@ class WebServer {
             bodyParserForm: {extended: true},
             uploadKey: null,
             uploadDir: null,
-            uploadMimeTypes: {'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/bmp': 'bmp'}
+            uploadMimeTypes: {'image/jpg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/bmp': 'bmp'}
         };
         Object.assign(this._config, config);//拷贝配置信息
         //绑定log4js实例
