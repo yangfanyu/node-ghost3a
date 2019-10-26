@@ -764,15 +764,10 @@ class PackData {
     /**
      * 计算md5
      * @param data {string} 要计算编码的字符串
-     * @param binary {boolean} 是否返回二进制对象
-     * @returns {number[]|string}
+     * @returns {string}
      */
-    static getMd5(data, binary = false) {
-        if (binary) {
-            return CryptoJS.MD5(data).words;
-        } else {
-            return CryptoJS.MD5(data).toString();
-        }
+    getMd5(data) {
+        return CryptoJS.MD5(data).toString();
     }
 }
 

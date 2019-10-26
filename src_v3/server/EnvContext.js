@@ -2,6 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const log4js = require('log4js');
+const CryptoJS = require('crypto-js');
 
 /**
  * 运行环境工具类
@@ -174,6 +175,14 @@ class EnvContext {
         ip = ip.split(/\s*,\s*/)[0];
         ip = ip.trim() || '127.0.0.1';
         return ip;
+    }
+    /**
+     * 计算md5
+     * @param data {string} 要计算编码的字符串
+     * @returns {string}
+     */
+    getMd5(data) {
+        return CryptoJS.MD5(data).toString();
     }
     /**
      * 读取ssl证书并返回

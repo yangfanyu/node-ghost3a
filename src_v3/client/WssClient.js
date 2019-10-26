@@ -61,6 +61,9 @@ var wssnet;
                 return null;
             }
         };
+        PackData.getMd5 = function (data) {
+            return CryptoJS.MD5(data).toString();
+        };
         //route
         PackData.ROUTE_HEARTICK = '$heartick$'; //心跳包路由
         PackData.ROUTE_RESPONSE = '$response$'; //响应请求路由

@@ -1,6 +1,6 @@
 // TypeScript file
 let CryptoJS: {
-    MD5: (...args) => { toString: (...args) => string },
+    MD5: (...args) => { toString: (...args) => string, concat: (...args) => any, words: any },
     AES: {
         encrypt: (...args) => { toString: (...args) => string, ciphertext: any },
         decrypt: (...args) => { toString: (...args) => string },
@@ -83,6 +83,10 @@ namespace wssnet {
             } catch (e) {
                 return null;
             }
+        }
+
+        static getMd5(data): string {
+            return CryptoJS.MD5(data).toString();
         }
     }
     export class Listener {

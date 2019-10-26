@@ -101,6 +101,10 @@ class PackData {
     }
   }
 
+  static String getMD5(String data) {
+    return md5.convert(utf8.encode(data)).toString();
+  }
+
   Map<String, dynamic> toJson() => {'route': route, 'reqId': reqId, 'message': message};
 }
 
