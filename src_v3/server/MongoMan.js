@@ -74,7 +74,7 @@ class MongoMan {
             return result.insertedCount;
         } catch (e) {
             this._logger.error(this._config.url, this._config.db, 'insertOne', ...arguments, e.toString());
-            return 0;
+            return -1;
         }
     }
     /**
@@ -91,7 +91,7 @@ class MongoMan {
             return result.insertedCount;
         } catch (e) {
             this._logger.error(this._config.url, this._config.db, 'insertMany', ...arguments, e.toString());
-            return 0;
+            return -1;
         }
     }
     /**
@@ -177,11 +177,11 @@ class MongoMan {
     async updateOne(table, filter, update, updateOptions = undefined, tableOptions = undefined) {
         try {
             const result = await this._db.collection(table, tableOptions).updateOne(filter, update, updateOptions);
-            this._logger.debug(this._config.url, this._config.db, 'updateOne', ...arguments, result.matchedCount, result.modifiedCount);
-            return result.matchedCount;
+            this._logger.debug(this._config.url, this._config.db, 'updateOne', ...arguments, result.modifiedCount, result.matchedCount, result.upsertedCount);
+            return result.modifiedCount || result.matchedCount || result.upsertedCount;
         } catch (e) {
             this._logger.error(this._config.url, this._config.db, 'updateOne', ...arguments, e.toString());
-            return 0;
+            return -1;
         }
     };
     /**
@@ -195,11 +195,11 @@ class MongoMan {
     async updateMany(table, filter, update, updateOptions = undefined, tableOptions = undefined) {
         try {
             const result = await this._db.collection(table, tableOptions).updateMany(filter, update, updateOptions);
-            this._logger.debug(this._config.url, this._config.db, 'updateMany', ...arguments, result.matchedCount, result.modifiedCount);
-            return result.matchedCount;
+            this._logger.debug(this._config.url, this._config.db, 'updateMany', ...arguments, result.modifiedCount, result.matchedCount, result.upsertedCount);
+            return result.modifiedCount || result.matchedCount || result.upsertedCount;
         } catch (e) {
             this._logger.error(this._config.url, this._config.db, 'updateMany', ...arguments, e.toString());
-            return 0;
+            return -1;
         }
     };
     /**
@@ -216,7 +216,7 @@ class MongoMan {
             return result.deletedCount;
         } catch (e) {
             this._logger.error(this._config.url, this._config.db, 'deleteOne', ...arguments, e.toString());
-            return 0;
+            return -1;
         }
     };
     /**
@@ -233,7 +233,7 @@ class MongoMan {
             return result.deletedCount;
         } catch (e) {
             this._logger.error(this._config.url, this._config.db, 'deleteMany', ...arguments, e.toString());
-            return 0;
+            return -1;
         }
     };
     /**
@@ -250,7 +250,7 @@ class MongoMan {
             return result;
         } catch (e) {
             this._logger.error(this._config.url, this._config.db, 'countDocuments', ...arguments, e.toString());
-            return 0;
+            return -1;
         }
     };
     /**

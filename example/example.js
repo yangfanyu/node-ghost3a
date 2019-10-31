@@ -42,6 +42,11 @@ function testMongoMan() {
         await mongo.updateOne(table, {}, {
             $set: {nick: 'aaa'}
         });
+        await mongo.updateOne(table, {
+            info: 'zzz',
+        }, {
+            $set: {nick: 'zzz'}
+        }, {upsert: true});
         //updateManyDocs
         await mongo.updateMany(table, {}, {
             $set: {info: 'bbb'}
