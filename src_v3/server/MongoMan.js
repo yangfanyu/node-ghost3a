@@ -131,7 +131,7 @@ class MongoMan {
     async findMany(table, query, join = undefined, findOptions = undefined, tableOptions = undefined) {
         try {
             const result = await this._db.collection(table, tableOptions).find(query, findOptions).toArray();
-            if (join) {
+            if (result.length > 0 && join) {
                 //模拟单表左外连接
                 let equalsId = false;
                 join.query = join.query || {};
@@ -178,7 +178,7 @@ class MongoMan {
         try {
             const result = await this._db.collection(table, tableOptions).updateOne(filter, update, updateOptions);
             this._logger.debug(this._config.url, this._config.db, 'updateOne', ...arguments, result.matchedCount, result.modifiedCount);
-            return result.modifiedCount;
+            return result.matchedCount;
         } catch (e) {
             this._logger.error(this._config.url, this._config.db, 'updateOne', ...arguments, e.toString());
             return 0;
@@ -196,7 +196,7 @@ class MongoMan {
         try {
             const result = await this._db.collection(table, tableOptions).updateMany(filter, update, updateOptions);
             this._logger.debug(this._config.url, this._config.db, 'updateMany', ...arguments, result.matchedCount, result.modifiedCount);
-            return result.modifiedCount;
+            return result.matchedCount;
         } catch (e) {
             this._logger.error(this._config.url, this._config.db, 'updateMany', ...arguments, e.toString());
             return 0;
