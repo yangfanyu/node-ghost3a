@@ -140,8 +140,10 @@ class WssServer {
     }
     /**
      * 初始化集群
-     * @param clusterDispatcher {ClusterDispatcher} 节点分配函数，如客户端连接的是开放外网的某个节点，集群内网有chat节点分组，客户端访问路由可以设置为'chat.xxx'，
-     *                                                    通过这个函数分配一个chat节点来处理数据包，如果未指定该函数，将随机分配一个节点
+     * @param clusterDispatcher {ClusterDispatcher} 1、节点分配函数，如客户端连接的是开放外网的某个节点，集群内网有chat节点分组，客户端访问路由可以设置为'chat.xxx'，
+     *                                                 通过这个函数分配一个chat节点来处理数据包
+     *                                              2、节点间的远程调用callRemoteRoute、callRemoteRouteResult也由该函数分配节点。
+     *                                              3、如果未指定该函数，将随机分配一个节点。
      */
     initClusters(clusterDispatcher = undefined) {
         const heartick = Math.floor(this._config.cycle / 1000);
@@ -346,7 +348,6 @@ class WssServer {
      * @param dispatchCallback {PushClusterDispatchCallback} 通过uid来筛选出具体节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应uid的session
      */
     pushClusterSession(appName, uid, route, message, dispatchCallback = undefined) {
-        const self = this;
         const cluster = this._clusterMap[appName];
         if (dispatchCallback) {
             const handle = cluster[dispatchCallback(cluster, uid)];
@@ -377,7 +378,6 @@ class WssServer {
      * @param dispatchCallback {PushClusterDispatchCallback} 通过gid来筛选出具体节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应gid的channel
      */
     pushClusterChannel(appName, gid, route, message, dispatchCallback = undefined) {
-        const self = this;
         const cluster = this._clusterMap[appName];
         if (dispatchCallback) {
             const handle = cluster[dispatchCallback(cluster, gid)];
@@ -407,7 +407,6 @@ class WssServer {
      * @param dispatchCallback {PushClusterDispatchCallback} 分配节点，如果未指定该函数，将推送到该节点分组的全部节点
      */
     clusterBroadcast(appName, route, message, dispatchCallback = undefined) {
-        const self = this;
         const cluster = this._clusterMap[appName];
         if (dispatchCallback) {
             const handle = cluster[dispatchCallback(cluster, null)];
@@ -426,6 +425,35 @@ class WssServer {
                 this._logger.debug('clusterBroadcast:', appName, handle.url, route, message);
             }
         }
+    }
+    /**
+     * 节点间远程路由异步调用
+     * @param appName {string} 节点分组名
+     * @param route {string}
+     * @param message {*}
+     */
+    callRemoteRoute(appName, route, message) {
+        const cluster = this._clusterMap[appName];
+        const index = this._clusterDispatcher(appName, cluster, null);
+        cluster[index].rmc.request(route, message);
+    }
+    /**
+     * 节点间远程路由异步调用，并返回结果
+     * @param appName {string} 节点分组名
+     * @param route {string}
+     * @param message {*}
+     * @return {Promise<any>}
+     */
+    callRemoteRouteResult(appName, route, message) {
+        const cluster = this._clusterMap[appName];
+        const index = this._clusterDispatcher(appName, cluster, null);
+        return new Promise((resolve) => {
+            cluster[index].rmc.request(route, message, (resp, params) => {
+                resolve(resp);
+            }, (resp, params) => {
+                resolve(resp);
+            }, this);
+        });
     }
     /**
      * 开启服务器

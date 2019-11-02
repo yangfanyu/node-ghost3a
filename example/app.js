@@ -75,8 +75,6 @@ envContext.configure('development|production', 'home|chat', () => {
         //下列三个路由是将消息发送到本节点的对应连接
         wssServer.addRouter('sendP2P', (server, session, pack) => {
             if (pack.message.uid) {
-                //TODO
-                //.........
                 server.pushSession(pack.message.uid, 'onP2PMessage', pack.message.text);
                 server.response(session, pack, {code: 200, data: '发送成功'});
             } else {
@@ -85,8 +83,6 @@ envContext.configure('development|production', 'home|chat', () => {
         });
         wssServer.addRouter('sendGRP', (server, session, pack) => {
             if (pack.message.gid) {
-                //TODO
-                //.........
                 // server.pushChannel(pack.message.gid, 'onGRPMessage', pack.message.text);//每个uid都推送一样的消息
                 server.pushChannelCustom(pack.message.gid, 'onGRPMessage', pack.message.text, (uid, message) => {
                     return 'custom for ' + uid + '->' + message;//推给每个uid的数据都不一样，举例场景： 棋牌房间、网游场景等
@@ -97,10 +93,16 @@ envContext.configure('development|production', 'home|chat', () => {
             }
         });
         wssServer.addRouter('sendALL', (server, session, pack) => {
-            //TODO
-            //.........
             server.broadcast('onALLMessage', pack.message.text);
             server.response(session, pack, {code: 200, data: '发送成功'});
+        });
+        wssServer.addRouter('rmc', (server, session, pack) => {
+            server.callRemoteRoute('chat', 'rmcMethod', '是我home节点的rmc');
+            server.response(session, pack, {code: 200, data: '调用成功'});
+        });
+        wssServer.addRouter('rmcResult', async (server, session, pack) => {
+            const resp = await server.callRemoteRouteResult('chat', 'rmcMethod', '是我home节点的rmcResult');
+            server.response(session, pack, resp);
         });
     });
     /**
@@ -110,12 +112,10 @@ envContext.configure('development|production', 'home|chat', () => {
      * 内部节点可以有很多层，客户端访问路由如：aaa.bbb.ccc.xxxxxxxx; 一般两层就够用了
      */
     envContext.configure('development|production', 'chat', () => {
-        //下列三个路由是将消息发送到所有外部服务器节点中的对应连接，
+        //下列三个路由是将消息发送到外部服务器节点中的对应连接，
         //可以通过dispatchCallback来快速映射到指定节点，减少节点间转发数据的开销
         wssServer.addRouter('sendP2P', (server, session, pack) => {
             if (pack.message.uid) {
-                //TODO
-                //.........
                 server.pushClusterSession('home', pack.message.uid, 'onP2PMessage', pack.message.text);
                 server.response(session, pack, {code: 200, data: 'cluster发送成功'});
             } else {
@@ -124,8 +124,6 @@ envContext.configure('development|production', 'home|chat', () => {
         });
         wssServer.addRouter('sendGRP', (server, session, pack) => {
             if (pack.message.gid) {
-                //TODO
-                //.........
                 server.pushClusterChannel('home', pack.message.gid, 'onGRPMessage', pack.message.text);
                 server.response(session, pack, {code: 200, data: 'cluster发送成功'});
             } else {
@@ -133,10 +131,11 @@ envContext.configure('development|production', 'home|chat', () => {
             }
         });
         wssServer.addRouter('sendALL', (server, session, pack) => {
-            //TODO
-            //.........
             server.clusterBroadcast('home', 'onALLMessage', pack.message.text);
             server.response(session, pack, {code: 200, data: 'cluster发送成功'});
+        });
+        wssServer.addRouter('rmcMethod', (server, session, pack) => {
+            server.response(session, pack, {code: 200, data: '我是chat节点的远程方法rmcMethod'});
         });
     });
     //启动服务器

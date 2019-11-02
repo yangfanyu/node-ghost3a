@@ -28,6 +28,8 @@
 <button onclick="doConnect(8081)">连接到8081端口</button>
 <button onclick="doConnect(8082)">连接到8082端口</button>
 <button onclick="doDisconnect()">断开连接</button>
+<button onclick="rmc()">远程调用</button>
+<button onclick="rmcResult()">远程调用结果</button>
 <br/>
 <input type="text" width="8em" placeholder="输入uid" id="login_uid"/>
 <button onclick="doLogin()">用户登录</button>
@@ -102,6 +104,16 @@ P2P消息：
         tag.innerHTML = new Date().toLocaleString() + '<br>' + text;
         context.appendChild(tag);
         context.scrollTop = context.scrollHeight;
+    }
+
+    function rmc() {
+        if (!client) return;
+        client.request('rmc', {}, onResponseOk, onResponseErr);
+    }
+
+    function rmcResult() {
+        if (!client) return;
+        client.request('rmcResult', {}, onResponseOk, onResponseErr);
     }
 
     function doLogin() {
