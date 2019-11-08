@@ -24,6 +24,11 @@ function testMongoMan() {
         //insertManyDocs
         const userArr = [{name: 'name-1'}, {name: 'name-2'}, {name: 'name-3'}, {name: 'name-4'}];
         await mongo.insertMany(table, userArr);
+        //createObjectID
+        console.log(mongo.createObjectID());
+        console.log(mongo.createObjectID());
+        console.log(mongo.createObjectID());
+        console.log(mongo.createObjectID());
         //findOneDoc
         await mongo.findOne(table, {_id: user._id.toString()});
         await mongo.findOne(table, {_id: mongo.hexstr2ObjectID(user._id.toString())});
@@ -92,5 +97,5 @@ function testWssClient() {
     }, 60 * 1000);
 }
 
-// testMongoMan();
-testWssClient();
+testMongoMan();
+// testWssClient();

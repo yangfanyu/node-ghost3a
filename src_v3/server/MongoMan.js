@@ -299,6 +299,12 @@ class MongoMan {
         return this._db.collection(table);
     }
     /**
+     * @return {MongoClient.connect.ObjectID}
+     */
+    createObjectID() {
+        return new ObjectID();
+    }
+    /**
      * @param hexstr {string}
      * @return {MongoClient.connect.ObjectID}
      */
