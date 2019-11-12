@@ -20,10 +20,11 @@ function testMongoMan() {
         //insertOneDoc
         const user = {name: 'name-0'};
         await mongo.insertOne(table, user);
-        console.log('json result:', JSON.stringify(user));
+        console.log('after insertOne json->', JSON.stringify(user));
         //insertManyDocs
         const userArr = [{name: 'name-1'}, {name: 'name-2'}, {name: 'name-3'}, {name: 'name-4'}];
         await mongo.insertMany(table, userArr);
+        console.log('after insertMany json->', JSON.stringify(userArr));
         //createObjectID
         console.log(mongo.createObjectID());
         console.log(mongo.createObjectID());
