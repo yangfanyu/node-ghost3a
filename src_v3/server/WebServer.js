@@ -205,23 +205,17 @@ class WebServer {
      * 返回HTTP/S服务器实例
      * @returns {Server | any}
      */
-    get server() {
-        return this._server;
-    }
+    get server() { return this._server; }
     /**
      * 返回express实例
      * @returns {Express}
      */
-    get webapp() {
-        return this._webapp;
-    }
+    get webapp() { return this._webapp; }
     /**
      * 返回express
      * @returns {createApplication}
      */
-    get express() {
-        return this._express;
-    }
+    get express() { return this._express; }
     /**
      * 确保返回一个object类型
      * @param config

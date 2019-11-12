@@ -155,17 +155,11 @@ class WssSession {
         return Date.now() > this._lastHeart + timeout;
     }
 
-    get id() {
-        return this._id;
-    }
+    get id() { return this._id; }
 
-    get ip() {
-        return this._ip;
-    }
+    get ip() { return this._ip; }
 
-    get uid() {
-        return this._uid || 'uid';
-    }
+    get uid() { return this._uid || 'uid'; }
 }
 
 module.exports = WssSession;

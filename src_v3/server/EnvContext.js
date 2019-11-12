@@ -218,41 +218,45 @@ class EnvContext {
         });
     }
     /**
+     * @return {string}
+     */
+    get dir() { return this._appDir; }
+    /**
+     * @return {string}
+     */
+    get env() { return this._appEnv; }
+    /**
+     * @return {string}
+     */
+    get name() { return this._appName; }
+    /**
      * @returns {string}
      */
-    get host() {
-        return this._appHost;
-    }
+    get host() { return this._appHost; }
+    /**
+     * @return {string}
+     */
+    get inip() { return this._appInIP; }
     /**
      * @returns {number}
      */
-    get port() {
-        return this._appPort;
-    }
+    get port() { return this._appPort; }
     /**
      * @return {boolean}
      */
-    get ssls() {
-        return !!this._appSSLs;
-    }
+    get ssls() { return !!this._appSSLs; }
     /**
      * @return {string[]}
      */
-    get links() {
-        return this._appLinks;
-    }
+    get links() { return this._appLinks; }
     /**
      * @return {Object<string, {host: string, inip: string, port: number, ssls: boolean}[]>}
      */
-    get nodes() {
-        return this._appNodes;
-    }
+    get nodes() { return this._appNodes; }
     /**
      * @returns {string}
      */
-    get encode() {
-        return this._encode;
-    }
+    get encode() { return this._encode; }
 }
 
 module.exports = EnvContext;

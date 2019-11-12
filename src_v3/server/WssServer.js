@@ -794,7 +794,7 @@ class PackData {
      * @param data {string} 要计算编码的字符串
      * @returns {string}
      */
-    getMd5(data) {
+    static getMd5(data) {
         return CryptoJS.MD5(data).toString();
     }
 }

@@ -84,8 +84,7 @@ namespace wssnet {
                 return null;
             }
         }
-
-        static getMd5(data): string {
+        public static getMd5(data): string {
             return CryptoJS.MD5(data).toString();
         }
     }

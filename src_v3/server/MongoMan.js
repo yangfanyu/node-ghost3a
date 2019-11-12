@@ -296,7 +296,7 @@ class MongoMan {
      * @return {Collection}
      */
     collection(table, tableOptions = undefined) {
-        return this._db.collection(table);
+        return this._db.collection(table, tableOptions);
     }
     /**
      * @return {MongoClient.connect.ObjectID}
