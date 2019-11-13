@@ -1,5 +1,4 @@
 'use strict';
-const fs = require('fs');
 const uuid = require('uuid/v1');
 const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
@@ -20,11 +19,7 @@ class WssServer {
      * @typedef {{count:number,sessions:Object.<number,WssSession>}} Channel
      */
     /**
-     * @callback ClusterDispatcher
-     * @param {string} appName
-     * @param {ClusterNode[]} cluster
-     * @param {PackData} pack
-     * @return {number} index - index of target cluster item
+     * @typedef {{tid:string|null,route:string,message:*,word:string,sign:*}} InnerData
      */
     /**
      * @callback ServerCyclerListener
@@ -46,15 +41,22 @@ class WssServer {
      * @param {PackData} pack
      */
     /**
+     * @callback RemoteListener
+     * @param {WssServer} server
+     * @param {WssSession} session
+     * @param {PackData} pack
+     */
+    /**
      * @callback PushChannelCustomCallback
      * @param {string} uid
      * @param {*} message
      * @return {*} message - custom message for target uid
      */
     /**
-     * @callback PushClusterDispatchCallback
+     * @callback ClusterDispatchCallback
      * @param {{ClusterNode}[]} cluster
-     * @param {string|null} id
+     * @param {string|null} tid
+     * @param {InnerData} innerData
      * @return {number} index - index of target cluster item
      */
     /**
@@ -69,7 +71,8 @@ class WssServer {
      * @property {Object} _wsscfg
      * @property {WebSocket.Server} _wssapp
      * @property {http.Server|https.Server} _server
-     * @property {Object.<string,RouterListener>} _routerMap - 路由集合
+     * @property {Object.<string,RouterListener>} _routerMap - 路由监听集合
+     * @property {Object.<string,RemoteListener>} _remoteMap - 远程监听集合
      * @property {Object.<string,WssSession>} _socketMap - 全部session集合，包括未绑定uid的session。（每个websocket连接对应一个session）
      * @property {Object.<string,WssSession>} _sessionMap - 已绑定uid的session集合
      * @property {Object.<string,Channel>} _channelMap - 自定义消息推送组（如：聊天室、游戏房间等）
@@ -77,7 +80,6 @@ class WssServer {
      * @property {number} _totalSocket
      * @property {number} _totalSession
      * @property {number} _cycleTicker
-     * @property {ClusterDispatcher} _clusterDispatcher - 深入访问内部节点时的分配函数。
      * @property {ServerCyclerListener} _serverCyclerListener - 心跳循环每次运行时的都会通知这个监听器
      * @property {SessionCloseListener} _sessionCloseListener - session关闭时的监听器，包括未绑定uid的session
      * 构造函数参数
@@ -130,6 +132,7 @@ class WssServer {
         this._server = this._wsscfg.server;//绑定HTTP/S服务器实例
         //其它属性
         this._routerMap = {};
+        this._remoteMap = {};
         this._socketMap = {};
         this._sessionMap = {};
         this._channelMap = {};
@@ -137,18 +140,13 @@ class WssServer {
         this._totalSocket = 0;
         this._totalSession = 0;
         this._cycleTicker = 0;//定时器
-        this._clusterDispatcher = null;
         this._serverCyclerListener = null;
         this._sessionCloseListener = null;
     }
     /**
      * 初始化集群
-     * @param clusterDispatcher {ClusterDispatcher} 1、节点分配函数，如客户端连接的是开放外网的某个节点，集群内网有chat节点分组，客户端访问路由可以设置为'chat.xxx'，
-     *                                                 通过这个函数分配一个chat节点来处理数据包
-     *                                              2、节点间的远程调用callRemoteRoute、callRemoteRouteResult也由该函数分配节点。
-     *                                              3、如果未指定该函数，将随机分配一个节点。
      */
-    initClusters(clusterDispatcher = undefined) {
+    initClusters() {
         const heartick = Math.floor(this._config.cycle / 1000);
         for (let i = 0; i < this._context.links.length; i++) {
             const appName = this._context.links[i];
@@ -166,12 +164,9 @@ class WssServer {
                 this._clusterMap[appName] = cluster;
             }
         }
-        this._clusterDispatcher = clusterDispatcher || ((appName, cluster, pack) => {
-            return Math.min(Math.floor(Math.random() * cluster.length), cluster.length - 1);
-        });
     }
     /**
-     * 注册监听器
+     * 注册周期监听器
      * @param serverCyclerListener {ServerCyclerListener}
      * @param sessionCloseListener {SessionCloseListener}
      */
@@ -184,15 +179,16 @@ class WssServer {
      * @param route {string}
      * @param listener {RouterListener}
      */
-    addRouter(route, listener) {
+    setRouter(route, listener) {
         this._routerMap[route] = listener;
     }
     /**
-     * 删除路由监听器
-     * @param route {string} 路由名称
+     * 设置远程监听器
+     * @param route {string}
+     * @param listener {RemoteListener}
      */
-    delRouter(route) {
-        delete this._routerMap[route];
+    setRemote(route, listener) {
+        this._remoteMap[route] = listener;
     }
     /**
      * 绑定uid到session
@@ -297,7 +293,7 @@ class WssServer {
         const pack = new PackData(route, undefined, message);
         const data = PackData.serialize(pack, this._config.pwd, this._config.binary);
         for (let i = 0; i < uids.length; i++) {
-            let session = this._sessionMap[uids[i]];
+            const session = this._sessionMap[uids[i]];
             if (session) {
                 session.send(data, this._getSendOptions());
             }
@@ -365,21 +361,20 @@ class WssServer {
      * @param uid {string}
      * @param route {string}
      * @param message {*}
-     * @param dispatchCallback {PushClusterDispatchCallback} 通过uid来筛选出具体节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应uid的session
+     * @param dispatchCallback {ClusterDispatchCallback} 通过uid来筛选出具体节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应uid的session
      */
     pushClusterSession(appName, uid, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
-        const word = uuid();
-        const msgdata = {uid: uid, route: route, message: message, word: word, sign: this._countInnerSign(route, word)};
+        const innerData = this._generateInnerData(uid, route, message);
         if (dispatchCallback) {
-            const handle = cluster[dispatchCallback(cluster, uid)];
-            handle.rmc.request(PackData.ROUTE_INNERP2P, msgdata);
-            this._logger.debug('pushClusterSession:', appName, handle.url, msgdata);
+            const handle = cluster[dispatchCallback(cluster, uid, innerData)];
+            handle.rmc.request(PackData.ROUTE_INNERP2P, innerData);
+            this._logger.debug('pushClusterSession:', appName, handle.url, innerData);
         } else {
             for (let i = 0; i < cluster.length; i++) {
                 const handle = cluster[i];
-                handle.rmc.request(PackData.ROUTE_INNERP2P, msgdata);
-                this._logger.debug('pushClusterSession:', appName, handle.url, msgdata);
+                handle.rmc.request(PackData.ROUTE_INNERP2P, innerData);
+                this._logger.debug('pushClusterSession:', appName, handle.url, innerData);
             }
         }
     }
@@ -389,21 +384,20 @@ class WssServer {
      * @param gid {string}
      * @param route {string}
      * @param message {*}
-     * @param dispatchCallback {PushClusterDispatchCallback} 通过gid来筛选出具体节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应gid的channel
+     * @param dispatchCallback {ClusterDispatchCallback} 通过gid来筛选出具体节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应gid的channel
      */
     pushClusterChannel(appName, gid, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
-        const word = uuid();
-        const msgdata = {gid: gid, route: route, message: message, word: word, sign: this._countInnerSign(route, word)};
+        const innerData = this._generateInnerData(gid, route, message);
         if (dispatchCallback) {
-            const handle = cluster[dispatchCallback(cluster, gid)];
-            handle.rmc.request(PackData.ROUTE_INNERGRP, msgdata);
-            this._logger.debug('pushClusterChannel:', appName, handle.url, msgdata);
+            const handle = cluster[dispatchCallback(cluster, gid, innerData)];
+            handle.rmc.request(PackData.ROUTE_INNERGRP, innerData);
+            this._logger.debug('pushClusterChannel:', appName, handle.url, innerData);
         } else {
             for (let i = 0; i < cluster.length; i++) {
                 const handle = cluster[i];
-                handle.rmc.request(PackData.ROUTE_INNERGRP, msgdata);
-                this._logger.debug('pushClusterChannel:', appName, handle.url, msgdata);
+                handle.rmc.request(PackData.ROUTE_INNERGRP, innerData);
+                this._logger.debug('pushClusterChannel:', appName, handle.url, innerData);
             }
         }
     }
@@ -412,21 +406,20 @@ class WssServer {
      * @param appName {string} 节点分组名
      * @param route {string}
      * @param message {*}
-     * @param dispatchCallback {PushClusterDispatchCallback} 分配节点，如果未指定该函数，将推送到该节点分组的全部节点
+     * @param dispatchCallback {ClusterDispatchCallback} 分配节点，如果未指定该函数，将推送到该节点分组的全部节点
      */
     clusterBroadcast(appName, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
-        const word = uuid();
-        const msgdata = {route: route, message: message, word: word, sign: this._countInnerSign(route, word)};
+        const innerData = this._generateInnerData(null, route, message);
         if (dispatchCallback) {
-            const handle = cluster[dispatchCallback(cluster, null)];
-            handle.rmc.request(PackData.ROUTE_INNERALL, msgdata);
-            this._logger.debug('clusterBroadcast:', appName, handle.url, msgdata);
+            const handle = cluster[dispatchCallback(cluster, null, innerData)];
+            handle.rmc.request(PackData.ROUTE_INNERALL, innerData);
+            this._logger.debug('clusterBroadcast:', appName, handle.url, innerData);
         } else {
             for (let i = 0; i < cluster.length; i++) {
                 const handle = cluster[i];
-                handle.rmc.request(PackData.ROUTE_INNERALL, msgdata);
-                this._logger.debug('clusterBroadcast:', appName, handle.url, msgdata);
+                handle.rmc.request(PackData.ROUTE_INNERALL, innerData);
+                this._logger.debug('clusterBroadcast:', appName, handle.url, innerData);
             }
         }
     }
@@ -435,24 +428,32 @@ class WssServer {
      * @param appName {string} 节点分组名
      * @param route {string}
      * @param message {*}
+     * @param dispatchCallback {ClusterDispatchCallback} 分配节点，如果未指定该函数，将随机选择一个节点
      */
-    callRemoteRoute(appName, route, message) {
+    callRemote(appName, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
-        const index = this._clusterDispatcher(appName, cluster, null);
-        cluster[index].rmc.request(route, message);
+        const innerData = this._generateInnerData(null, route, message);
+        const index = dispatchCallback ? dispatchCallback(cluster, null, innerData) : Math.min(Math.floor(Math.random() * cluster.length), cluster.length - 1);
+        const handle = cluster[index];
+        this._logger.debug('callRemote:', appName, handle.url, innerData);
+        handle.rmc.request(PackData.ROUTE_INNERRMC, innerData);
     }
     /**
      * 节点间远程路由异步调用，并返回结果
      * @param appName {string} 节点分组名
      * @param route {string}
      * @param message {*}
-     * @return {Promise<any>}
+     * @param dispatchCallback {ClusterDispatchCallback} 分配节点，如果未指定该函数，将随机选择一个节点
+     * @return {Promise<{code:number,data:*}>}
      */
-    callRemoteRouteResult(appName, route, message) {
+    callRemoteForResult(appName, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
-        const index = this._clusterDispatcher(appName, cluster, null);
+        const msgdata = this._generateInnerData(null, route, message);
+        const index = dispatchCallback ? dispatchCallback(cluster, null, msgdata) : Math.min(Math.floor(Math.random() * cluster.length), cluster.length - 1);
+        const handle = cluster[index];
+        this._logger.debug('callRemoteForResult:', appName, handle.url, msgdata);
         return new Promise((resolve) => {
-            cluster[index].rmc.request(route, message, (resp, params) => {
+            handle.rmc.request(PackData.ROUTE_INNERRMC, msgdata, (resp, params) => {
                 resolve(resp);
             }, (resp, params) => {
                 resolve(resp);
@@ -543,7 +544,7 @@ class WssServer {
         this._totalSession = totalSession;
         //回调上层绑定的监听器
         if (this._serverCyclerListener) {
-            this._serverCyclerListener(this, totalSocket, totalSession);
+            this._serverCyclerListener(this, this._totalSocket, this._totalSession);
         }
     }
     /**
@@ -610,9 +611,9 @@ class WssServer {
         }
         //集群P2P包
         if (pack.route === PackData.ROUTE_INNERP2P) {
-            if (this._checkInnerSign(pack.message.route, pack.message.word, pack.message.sign)) {
+            if (this._validateInnerData(pack.message)) {
                 this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
-                this.pushSession(pack.message.uid, pack.message.route, pack.message.message);
+                this.pushSession(pack.message.tid, pack.message.route, pack.message.message);
             } else {
                 this._logger.error('_onWebSocketMessage:', session.ip, session.id, session.uid, PackData.CODE_SIGN.code, pack);
                 session.close(PackData.CODE_SIGN.code, PackData.CODE_SIGN.data);
@@ -621,9 +622,9 @@ class WssServer {
         }
         //集群GRP包
         if (pack.route === PackData.ROUTE_INNERGRP) {
-            if (this._checkInnerSign(pack.message.route, pack.message.word, pack.message.sign)) {
+            if (this._validateInnerData(pack.message)) {
                 this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
-                this.pushChannel(pack.message.gid, pack.message.route, pack.message.message);
+                this.pushChannel(pack.message.tid, pack.message.route, pack.message.message);
             } else {
                 this._logger.error('_onWebSocketMessage:', session.ip, session.id, session.uid, PackData.CODE_SIGN.code, pack);
                 session.close(PackData.CODE_SIGN.code, PackData.CODE_SIGN.data);
@@ -632,7 +633,7 @@ class WssServer {
         }
         //集群ALL包
         if (pack.route === PackData.ROUTE_INNERALL) {
-            if (this._checkInnerSign(pack.message.route, pack.message.word, pack.message.sign)) {
+            if (this._validateInnerData(pack.message)) {
                 this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
                 this.broadcast(pack.message.route, pack.message.message);
             } else {
@@ -641,21 +642,26 @@ class WssServer {
             }
             return;
         }
-        //自定义路由
-        const routePath = pack.route.split('.');
-        if (routePath.length > 1 && this._clusterMap[routePath[0]]) {
-            //需要继续转发到内层
-            this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
-            const appName = routePath[0];
-            const cluster = this._clusterMap[appName];
-            const index = this._clusterDispatcher(appName, cluster, pack);
-            const route = routePath.slice(1).join('.');
-            cluster[index].rmc.request(route, pack.message, this._onRequestForCluster, this._onRequestForCluster, this, [session.id, pack]);
+        //集群RMC包
+        if (pack.route === PackData.ROUTE_INNERRMC) {
+            if (this._validateInnerData(pack.message)) {
+                if (this._remoteMap[pack.message.route]) {
+                    this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
+                    this._remoteMap[pack.message.route](this, session, new PackData(pack.message.route, pack.reqId, pack.message.message));//调用远程方法
+                } else {
+                    this._logger.error('_onWebSocketMessage:', session.ip, session.id, session.uid, PackData.CODE_REMOTE.code, pack);
+                    session.close(PackData.CODE_REMOTE.code, PackData.CODE_REMOTE.data);
+                }
+            } else {
+                this._logger.error('_onWebSocketMessage:', session.ip, session.id, session.uid, PackData.CODE_SIGN.code, pack);
+                session.close(PackData.CODE_SIGN.code, PackData.CODE_SIGN.data);
+            }
             return;
-        } else if (this._routerMap[pack.route]) {
-            //已经到达最内层节点
+        }
+        //自定义路由
+        if (this._routerMap[pack.route]) {
             this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
-            this._routerMap[pack.route](this, session, pack);//回调自定义路由
+            this._routerMap[pack.route](this, session, pack);//调用路由方法
             return;
         }
         //没找到路由
@@ -699,39 +705,32 @@ class WssServer {
             this._logger.debug('cluster onretry->', node.grp, node.url, count, 'times');
         }, null, this);
     }
+
     /**
-     * 生成内网数据包签名
+     * 生成内部签名数据包
+     * @param tid {string|null}
      * @param route {string}
-     * @param word {string}
-     * @return {string}
+     * @param message {*}
+     * @return {InnerData}
      * @private
      */
-    _countInnerSign(route, word) {
-        return this._context.getMd5(this._config.secret + route + word + this._config.secret);
+    _generateInnerData(tid, route, message) {
+        const data = {};
+        if (tid) data.tid = tid;
+        data.route = route;
+        data.message = message;
+        data.word = uuid();
+        data.sign = this._context.getMd5(route + data.word + this._config.secret);
+        return data;
     }
     /**
-     * 校验内网数据包签名
-     * @param route {string}
-     * @param word {string}
-     * @param sign {string}
+     * 校验内部签名数据包
+     * @param data {InnerData}
      * @return {boolean}
      * @private
      */
-    _checkInnerSign(route, word, sign) {
-        return this._context.getMd5(this._config.secret + route + word + this._config.secret) === sign;
-    }
-    /**
-     * 转发内层节点响应结果到外层节点
-     * @param resp {wssnet.Response}
-     * @param params {*[]}
-     * @private
-     */
-    _onRequestForCluster(resp, params) {
-        const id = params[0];
-        const pack = params[1];
-        if (this._socketMap[id]) {
-            this.response(this._socketMap[id], pack, {code: resp.code, data: resp.data});
-        }
+    _validateInnerData(data) {
+        return this._context.getMd5(data.route + data.word + this._config.secret) === data.sign;
     }
 }
 
@@ -745,6 +744,7 @@ class PackData {
     static ROUTE_INNERP2P = '$innerP2P$';//集群点对点消息路由
     static ROUTE_INNERGRP = '$innerGRP';//集群分组消息路由
     static ROUTE_INNERALL = '$innerALL$';//集群广播消息路由
+    static ROUTE_INNERRMC = '$innerRMC$';//集群远程方法路由
     /**
      * 状态码范围参考： https://tools.ietf.org/html/rfc6455#section-7.4.2
      * 以及：https://github.com/websockets/ws/issues/715
@@ -754,9 +754,10 @@ class PackData {
     static CODE_FORMAT = {code: 4002, data: 'format error'};
     static CODE_REPEAT = {code: 4003, data: 'repeat error'};
     static CODE_SIGN = {code: 4004, data: 'sign error'};
-    static CODE_ROUTE = {code: 4005, data: 'route error'};
-    static CODE_SOCKET = {code: 4006, data: 'socket error'};
-    static CODE_TIMEOUT = {code: 4007, data: 'timeout error'};
+    static CODE_REMOTE = {code: 4005, data: 'remote error'};
+    static CODE_ROUTE = {code: 4006, data: 'route error'};
+    static CODE_SOCKET = {code: 4007, data: 'socket error'};
+    static CODE_TIMEOUT = {code: 4008, data: 'timeout error'};
     /**
      * 数据包
      * @param route {string}

@@ -28,8 +28,7 @@
 <button onclick="doConnect(8081)">连接到8081端口</button>
 <button onclick="doConnect(8082)">连接到8082端口</button>
 <button onclick="doDisconnect()">断开连接</button>
-<button onclick="rmc()">远程调用</button>
-<button onclick="rmcResult()">远程调用结果</button>
+<button onclick="doResultRmc()">远程调用反馈</button>
 <br/>
 <input type="text" width="8em" placeholder="输入uid" id="login_uid"/>
 <button onclick="doLogin()">用户登录</button>
@@ -106,14 +105,9 @@ P2P消息：
         context.scrollTop = context.scrollHeight;
     }
 
-    function rmc() {
+    function doResultRmc() {
         if (!client) return;
-        client.request('rmc', {}, onResponseOk, onResponseErr);
-    }
-
-    function rmcResult() {
-        if (!client) return;
-        client.request('rmcResult', {}, onResponseOk, onResponseErr);
+        client.request('result_rmc', {}, onResponseOk, onResponseErr);
     }
 
     function doLogin() {
@@ -144,7 +138,7 @@ P2P消息：
 
     function doSendP2P(global) {
         if (!client) return;
-        client.request(global ? 'chat.sendP2P' : 'sendP2P', {
+        client.request(global ? 'sendP2P_rmc' : 'sendP2P', {
             uid: document.getElementById('p2p_uid').value.trim(),
             text: document.getElementById('edit_context').value.trim(),
         }, onResponseOk, onResponseErr);
@@ -152,7 +146,7 @@ P2P消息：
 
     function doSendGrp(global) {
         if (!client) return;
-        client.request(global ? 'chat.sendGRP' : 'sendGRP', {
+        client.request(global ? 'sendGRP_rmc' : 'sendGRP', {
             gid: document.getElementById('grp_gid').value.trim(),
             text: document.getElementById('edit_context').value.trim(),
         }, onResponseOk, onResponseErr);
@@ -160,7 +154,7 @@ P2P消息：
 
     function doSendAll(global) {
         if (!client) return;
-        client.request(global ? 'chat.sendALL' : 'sendALL', {
+        client.request(global ? 'sendALL_rmc' : 'sendALL', {
             text: document.getElementById('edit_context').value.trim()
         }, onResponseOk, onResponseErr);
     }

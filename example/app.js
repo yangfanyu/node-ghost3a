@@ -44,7 +44,7 @@ envContext.configure('development|production', 'home|chat', () => {
      * 这里是客户端直接连接的节点，所以每一个session对应一个客户端连接
      */
     envContext.configure('development|production', 'home', () => {
-        wssServer.addRouter('login', (server, session, pack) => {
+        wssServer.setRouter('login', (server, session, pack) => {
             if (pack.message.uid) {
                 server.bindUid(session, pack.message.uid);
                 server.response(session, pack, {code: 200, data: '使用ID: ' + pack.message.uid + ' 登录成功'});
@@ -52,11 +52,11 @@ envContext.configure('development|production', 'home|chat', () => {
                 server.response(session, pack, {code: 500, data: 'uid不能为空'});
             }
         });
-        wssServer.addRouter('logout', (server, session, pack) => {
+        wssServer.setRouter('logout', (server, session, pack) => {
             server.unbindUid(session);
             server.response(session, pack, {code: 200, data: '已退出登录'});
         });
-        wssServer.addRouter('joinRoom', (server, session, pack) => {
+        wssServer.setRouter('joinRoom', (server, session, pack) => {
             if (pack.message.gid) {
                 server.joinChannel(session, pack.message.gid);
                 server.response(session, pack, {code: 200, data: '已加入: ' + pack.message.gid + ' 房间'});
@@ -64,7 +64,7 @@ envContext.configure('development|production', 'home|chat', () => {
                 server.response(session, pack, {code: 500, data: 'gid不能为空'});
             }
         });
-        wssServer.addRouter('quitRoom', (server, session, pack) => {
+        wssServer.setRouter('quitRoom', (server, session, pack) => {
             if (pack.message.gid) {
                 server.quitChannel(session, pack.message.gid);
                 server.response(session, pack, {code: 200, data: '已退出: ' + pack.message.gid + ' 房间'});
@@ -72,8 +72,7 @@ envContext.configure('development|production', 'home|chat', () => {
                 server.response(session, pack, {code: 500, data: 'gid不能为空'});
             }
         });
-        //下列三个路由是将消息发送到本节点的对应连接
-        wssServer.addRouter('sendP2P', (server, session, pack) => {
+        wssServer.setRouter('sendP2P', (server, session, pack) => {
             if (pack.message.uid) {
                 server.pushSession(pack.message.uid, 'onP2PMessage', pack.message.text);
                 server.response(session, pack, {code: 200, data: '发送成功'});
@@ -81,7 +80,15 @@ envContext.configure('development|production', 'home|chat', () => {
                 server.response(session, pack, {code: 500, data: 'uid不能为空'});
             }
         });
-        wssServer.addRouter('sendGRP', (server, session, pack) => {
+        wssServer.setRouter('sendP2P_rmc', (server, session, pack) => {
+            if (pack.message.uid) {
+                server.callRemote('chat', 'sendP2P', pack.message);
+                server.response(session, pack, {code: 200, data: '发送成功'});
+            } else {
+                server.response(session, pack, {code: 500, data: 'uid不能为空'});
+            }
+        });
+        wssServer.setRouter('sendGRP', (server, session, pack) => {
             if (pack.message.gid) {
                 // server.pushChannel(pack.message.gid, 'onGRPMessage', pack.message.text);//每个uid都推送一样的消息
                 server.pushChannelCustom(pack.message.gid, 'onGRPMessage', pack.message.text, (uid, message) => {
@@ -92,16 +99,24 @@ envContext.configure('development|production', 'home|chat', () => {
                 server.response(session, pack, {code: 500, data: 'gid不能为空'});
             }
         });
-        wssServer.addRouter('sendALL', (server, session, pack) => {
+        wssServer.setRouter('sendGRP_rmc', (server, session, pack) => {
+            if (pack.message.gid) {
+                server.callRemote('chat', 'sendGRP', pack.message);
+                server.response(session, pack, {code: 200, data: '发送成功'});
+            } else {
+                server.response(session, pack, {code: 500, data: 'gid不能为空'});
+            }
+        });
+        wssServer.setRouter('sendALL', (server, session, pack) => {
             server.broadcast('onALLMessage', pack.message.text);
             server.response(session, pack, {code: 200, data: '发送成功'});
         });
-        wssServer.addRouter('rmc', (server, session, pack) => {
-            server.callRemoteRoute('chat', 'rmcMethod', '是我home节点的rmc');
-            server.response(session, pack, {code: 200, data: '调用成功'});
+        wssServer.setRouter('sendALL_rmc', (server, session, pack) => {
+            server.callRemote('chat', 'sendALL', pack.message);
+            server.response(session, pack, {code: 200, data: '发送成功'});
         });
-        wssServer.addRouter('rmcResult', async (server, session, pack) => {
-            const resp = await server.callRemoteRouteResult('chat', 'rmcMethod', '是我home节点的rmcResult');
+        wssServer.setRouter('result_rmc', async (server, session, pack) => {
+            const resp = await server.callRemoteForResult('chat', 'result', '外部home节点');
             server.response(session, pack, resp);
         });
     });
@@ -109,33 +124,21 @@ envContext.configure('development|production', 'home|chat', () => {
      * 添加chat的路由
      * 内部服务器节点：用于做一些复杂处理如聊天服务器消息过滤等，可以方便的横向添加节点
      * 这里不是客户端直接连接的节点，所以session对应的不是客户端的连接，而是外部服务器节点的通讯连接
-     * 内部节点可以有很多层，客户端访问路由如：aaa.bbb.ccc.xxxxxxxx; 一般两层就够用了
      */
     envContext.configure('development|production', 'chat', () => {
         //下列三个路由是将消息发送到外部服务器节点中的对应连接，
         //可以通过dispatchCallback来快速映射到指定节点，减少节点间转发数据的开销
-        wssServer.addRouter('sendP2P', (server, session, pack) => {
-            if (pack.message.uid) {
-                server.pushClusterSession('home', pack.message.uid, 'onP2PMessage', pack.message.text);
-                server.response(session, pack, {code: 200, data: 'cluster发送成功'});
-            } else {
-                server.response(session, pack, {code: 500, data: 'uid不能为空'});
-            }
+        wssServer.setRemote('sendP2P', (server, session, pack) => {
+            server.pushClusterSession('home', pack.message.uid, 'onP2PMessage', pack.message.text);
         });
-        wssServer.addRouter('sendGRP', (server, session, pack) => {
-            if (pack.message.gid) {
-                server.pushClusterChannel('home', pack.message.gid, 'onGRPMessage', pack.message.text);
-                server.response(session, pack, {code: 200, data: 'cluster发送成功'});
-            } else {
-                server.response(session, pack, {code: 500, data: 'gid不能为空'});
-            }
+        wssServer.setRemote('sendGRP', (server, session, pack) => {
+            server.pushClusterChannel('home', pack.message.gid, 'onGRPMessage', pack.message.text);
         });
-        wssServer.addRouter('sendALL', (server, session, pack) => {
+        wssServer.setRemote('sendALL', (server, session, pack) => {
             server.clusterBroadcast('home', 'onALLMessage', pack.message.text);
-            server.response(session, pack, {code: 200, data: 'cluster发送成功'});
         });
-        wssServer.addRouter('rmcMethod', (server, session, pack) => {
-            server.response(session, pack, {code: 200, data: '我是chat节点的远程方法rmcMethod'});
+        wssServer.setRemote('result', (server, session, pack) => {
+            server.response(session, pack, {code: 200, data: pack.message + '->内部chat节点'});
         });
     });
     //启动服务器
