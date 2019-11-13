@@ -1,5 +1,6 @@
 'use strict';
 const fs = require('fs');
+const uuid = require('uuid/v1');
 const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
 const https = require('https');
@@ -84,6 +85,7 @@ class WssServer {
      * @param category {string} 日志分类
      * @param config {Object} 配置信息
      * @param config.pwd {string} 数据加密密码，null不启用加密
+     * @param config.secret {string} 内部推送数据包签名验签密钥
      * @param config.binary {boolean} true使用二进制收发数据，false使用字符串收发数据
      * @param config.cycle {number} 心跳检测周期 ms
      * @param config.timeout {number} 两个心跳包之间的最大间隔时间 ms
@@ -105,6 +107,7 @@ class WssServer {
         this._context = context;
         this._config = {
             pwd: null,
+            secret: null,
             binary: false,
             cycle: 60 * 1000,
             timeout: 60 * 1000 * 3,
@@ -285,6 +288,23 @@ class WssServer {
         this._logger.debug('pushSession:', session.ip, session.id, session.uid, pack);
     }
     /**
+     * 推送消息到本节点的某批session
+     * @param uids {string[]}
+     * @param route {string}
+     * @param message  {*}
+     */
+    pushSessionBatch(uids, route, message) {
+        const pack = new PackData(route, undefined, message);
+        const data = PackData.serialize(pack, this._config.pwd, this._config.binary);
+        for (let i = 0; i < uids.length; i++) {
+            let session = this._sessionMap[uids[i]];
+            if (session) {
+                session.send(data, this._getSendOptions());
+            }
+        }
+        this._logger.debug('pushSessionBatch:', uids, pack);
+    }
+    /**
      * 推送消息到本节点的某个消息推送组
      * @param gid {string}
      * @param route {string}
@@ -349,23 +369,17 @@ class WssServer {
      */
     pushClusterSession(appName, uid, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
+        const word = uuid();
+        const msgdata = {uid: uid, route: route, message: message, word: word, sign: this._countInnerSign(route, word)};
         if (dispatchCallback) {
             const handle = cluster[dispatchCallback(cluster, uid)];
-            handle.rmc.request(PackData.ROUTE_INNERP2P, {
-                uid: uid,
-                route: route,
-                message: message
-            });
-            this._logger.debug('pushClusterSession:', appName, handle.url, uid, route, message);
+            handle.rmc.request(PackData.ROUTE_INNERP2P, msgdata);
+            this._logger.debug('pushClusterSession:', appName, handle.url, msgdata);
         } else {
             for (let i = 0; i < cluster.length; i++) {
                 const handle = cluster[i];
-                handle.rmc.request(PackData.ROUTE_INNERP2P, {
-                    uid: uid,
-                    route: route,
-                    message: message
-                });
-                this._logger.debug('pushClusterSession:', appName, handle.url, uid, route, message);
+                handle.rmc.request(PackData.ROUTE_INNERP2P, msgdata);
+                this._logger.debug('pushClusterSession:', appName, handle.url, msgdata);
             }
         }
     }
@@ -379,23 +393,17 @@ class WssServer {
      */
     pushClusterChannel(appName, gid, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
+        const word = uuid();
+        const msgdata = {gid: gid, route: route, message: message, word: word, sign: this._countInnerSign(route, word)};
         if (dispatchCallback) {
             const handle = cluster[dispatchCallback(cluster, gid)];
-            handle.rmc.request(PackData.ROUTE_INNERGRP, {
-                gid: gid,
-                route: route,
-                message: message
-            });
-            this._logger.debug('pushClusterChannel:', appName, handle.url, gid, route, message);
+            handle.rmc.request(PackData.ROUTE_INNERGRP, msgdata);
+            this._logger.debug('pushClusterChannel:', appName, handle.url, msgdata);
         } else {
             for (let i = 0; i < cluster.length; i++) {
                 const handle = cluster[i];
-                handle.rmc.request(PackData.ROUTE_INNERGRP, {
-                    gid: gid,
-                    route: route,
-                    message: message
-                });
-                this._logger.debug('pushClusterChannel:', appName, handle.url, gid, route, message);
+                handle.rmc.request(PackData.ROUTE_INNERGRP, msgdata);
+                this._logger.debug('pushClusterChannel:', appName, handle.url, msgdata);
             }
         }
     }
@@ -408,21 +416,17 @@ class WssServer {
      */
     clusterBroadcast(appName, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
+        const word = uuid();
+        const msgdata = {route: route, message: message, word: word, sign: this._countInnerSign(route, word)};
         if (dispatchCallback) {
             const handle = cluster[dispatchCallback(cluster, null)];
-            handle.rmc.request(PackData.ROUTE_INNERALL, {
-                route: route,
-                message: message
-            });
-            this._logger.debug('clusterBroadcast:', appName, handle.url, route, message);
+            handle.rmc.request(PackData.ROUTE_INNERALL, msgdata);
+            this._logger.debug('clusterBroadcast:', appName, handle.url, msgdata);
         } else {
             for (let i = 0; i < cluster.length; i++) {
                 const handle = cluster[i];
-                handle.rmc.request(PackData.ROUTE_INNERALL, {
-                    route: route,
-                    message: message
-                });
-                this._logger.debug('clusterBroadcast:', appName, handle.url, route, message);
+                handle.rmc.request(PackData.ROUTE_INNERALL, msgdata);
+                this._logger.debug('clusterBroadcast:', appName, handle.url, msgdata);
             }
         }
     }
@@ -606,20 +610,35 @@ class WssServer {
         }
         //集群P2P包
         if (pack.route === PackData.ROUTE_INNERP2P) {
-            this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
-            this.pushSession(pack.message.uid, pack.message.route, pack.message.message);
+            if (this._checkInnerSign(pack.message.route, pack.message.word, pack.message.sign)) {
+                this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
+                this.pushSession(pack.message.uid, pack.message.route, pack.message.message);
+            } else {
+                this._logger.error('_onWebSocketMessage:', session.ip, session.id, session.uid, PackData.CODE_SIGN.code, pack);
+                session.close(PackData.CODE_SIGN.code, PackData.CODE_SIGN.data);
+            }
             return;
         }
         //集群GRP包
         if (pack.route === PackData.ROUTE_INNERGRP) {
-            this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
-            this.pushChannel(pack.message.gid, pack.message.route, pack.message.message);
+            if (this._checkInnerSign(pack.message.route, pack.message.word, pack.message.sign)) {
+                this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
+                this.pushChannel(pack.message.gid, pack.message.route, pack.message.message);
+            } else {
+                this._logger.error('_onWebSocketMessage:', session.ip, session.id, session.uid, PackData.CODE_SIGN.code, pack);
+                session.close(PackData.CODE_SIGN.code, PackData.CODE_SIGN.data);
+            }
             return;
         }
         //集群ALL包
         if (pack.route === PackData.ROUTE_INNERALL) {
-            this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
-            this.broadcast(pack.message.route, pack.message.message);
+            if (this._checkInnerSign(pack.message.route, pack.message.word, pack.message.sign)) {
+                this._logger.debug('_onWebSocketMessage:', session.ip, session.id, session.uid, pack);
+                this.broadcast(pack.message.route, pack.message.message);
+            } else {
+                this._logger.error('_onWebSocketMessage:', session.ip, session.id, session.uid, PackData.CODE_SIGN.code, pack);
+                session.close(PackData.CODE_SIGN.code, PackData.CODE_SIGN.data);
+            }
             return;
         }
         //自定义路由
@@ -681,6 +700,27 @@ class WssServer {
         }, null, this);
     }
     /**
+     * 生成内网数据包签名
+     * @param route {string}
+     * @param word {string}
+     * @return {string}
+     * @private
+     */
+    _countInnerSign(route, word) {
+        return this._context.getMd5(this._config.secret + route + word + this._config.secret);
+    }
+    /**
+     * 校验内网数据包签名
+     * @param route {string}
+     * @param word {string}
+     * @param sign {string}
+     * @return {boolean}
+     * @private
+     */
+    _checkInnerSign(route, word, sign) {
+        return this._context.getMd5(this._config.secret + route + word + this._config.secret) === sign;
+    }
+    /**
      * 转发内层节点响应结果到外层节点
      * @param resp {wssnet.Response}
      * @param params {*[]}
@@ -713,9 +753,10 @@ class PackData {
     static CODE_PARSE = {code: 4001, data: 'parse error'};
     static CODE_FORMAT = {code: 4002, data: 'format error'};
     static CODE_REPEAT = {code: 4003, data: 'repeat error'};
-    static CODE_ROUTE = {code: 4004, data: 'route error'};
-    static CODE_SOCKET = {code: 4005, data: 'socket error'};
-    static CODE_TIMEOUT = {code: 4006, data: 'timeout error'};
+    static CODE_SIGN = {code: 4004, data: 'sign error'};
+    static CODE_ROUTE = {code: 4005, data: 'route error'};
+    static CODE_SOCKET = {code: 4006, data: 'socket error'};
+    static CODE_TIMEOUT = {code: 4007, data: 'timeout error'};
     /**
      * 数据包
      * @param route {string}

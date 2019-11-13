@@ -36,7 +36,7 @@ envContext.configure('development|production', 'http', () => {
 });
 //WebSocket服务器
 envContext.configure('development|production', 'home|chat', () => {
-    const wssServer = new ghost3a.WssServer(envContext, 'server', {pwd: '123', binary: true, cycle: 10000});
+    const wssServer = new ghost3a.WssServer(envContext, 'server', {pwd: '123', secret: '456', binary: true, cycle: 10000});
     wssServer.initClusters();
     /**
      * 添加home的路由
