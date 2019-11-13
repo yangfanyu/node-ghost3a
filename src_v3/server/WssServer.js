@@ -166,7 +166,7 @@ class WssServer {
         }
     }
     /**
-     * 注册周期监听器
+     * 设置周期监听器
      * @param serverCyclerListener {ServerCyclerListener}
      * @param sessionCloseListener {SessionCloseListener}
      */
@@ -361,7 +361,7 @@ class WssServer {
      * @param uid {string}
      * @param route {string}
      * @param message {*}
-     * @param dispatchCallback {ClusterDispatchCallback} 通过uid来筛选出具体节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应uid的session
+     * @param dispatchCallback {ClusterDispatchCallback} 分配节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应uid的session
      */
     pushClusterSession(appName, uid, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
@@ -384,7 +384,7 @@ class WssServer {
      * @param gid {string}
      * @param route {string}
      * @param message {*}
-     * @param dispatchCallback {ClusterDispatchCallback} 通过gid来筛选出具体节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应gid的channel
+     * @param dispatchCallback {ClusterDispatchCallback} 分配节点，如果未指定该函数，则从该节点分组的全部节点中搜索对应gid的channel
      */
     pushClusterChannel(appName, gid, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
@@ -428,7 +428,7 @@ class WssServer {
      * @param appName {string} 节点分组名
      * @param route {string}
      * @param message {*}
-     * @param dispatchCallback {ClusterDispatchCallback} 分配节点，如果未指定该函数，将随机选择一个节点
+     * @param dispatchCallback {ClusterDispatchCallback} 分配节点，如果未指定该函数，则从该节点分组的全部节点中随机选择一个节点
      */
     callRemote(appName, route, message, dispatchCallback = undefined) {
         const cluster = this._clusterMap[appName];
@@ -443,7 +443,7 @@ class WssServer {
      * @param appName {string} 节点分组名
      * @param route {string}
      * @param message {*}
-     * @param dispatchCallback {ClusterDispatchCallback} 分配节点，如果未指定该函数，将随机选择一个节点
+     * @param dispatchCallback {ClusterDispatchCallback} 分配节点，如果未指定该函数，则从该节点分组的全部节点中随机选择一个节点
      * @return {Promise<{code:number,data:*}>}
      */
     callRemoteForResult(appName, route, message, dispatchCallback = undefined) {

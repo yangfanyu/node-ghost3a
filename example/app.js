@@ -42,6 +42,7 @@ envContext.configure('development|production', 'home|chat', () => {
      * 添加home的路由
      * 外部服务器节点：用户专门来接收客户端的连接，可以方便的横向添加节点
      * 这里是客户端直接连接的节点，所以每一个session对应一个客户端连接
+     * 注意：集群间数据通讯可以通过dispatchCallback来快速映射到指定节点，减少节点间转发数据的开销
      */
     envContext.configure('development|production', 'home', () => {
         wssServer.setRouter('login', (server, session, pack) => {
@@ -124,10 +125,9 @@ envContext.configure('development|production', 'home|chat', () => {
      * 添加chat的路由
      * 内部服务器节点：用于做一些复杂处理如聊天服务器消息过滤等，可以方便的横向添加节点
      * 这里不是客户端直接连接的节点，所以session对应的不是客户端的连接，而是外部服务器节点的通讯连接
+     * 注意：集群间数据通讯可以通过dispatchCallback来快速映射到指定节点，减少节点间转发数据的开销
      */
     envContext.configure('development|production', 'chat', () => {
-        //下列三个路由是将消息发送到外部服务器节点中的对应连接，
-        //可以通过dispatchCallback来快速映射到指定节点，减少节点间转发数据的开销
         wssServer.setRemote('sendP2P', (server, session, pack) => {
             server.pushClusterSession('home', pack.message.uid, 'onP2PMessage', pack.message.text);
         });
