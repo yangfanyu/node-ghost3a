@@ -145,10 +145,11 @@ class MongoMan {
                 const joinResult = await this._db.collection(join.table, join.tableOptions).find(join.query, join.findOptions).toArray();
                 for (let i = 0; i < result.length; i++) {
                     const doc = result[i];
+                    const fromValue = doc[join.fromField];
                     doc[join.resField] = join.onlyOne ? {} : [];
                     for (let k = 0; k < joinResult.length; k++) {
                         const item = joinResult[k];
-                        if ((equalsId && doc[join.fromField].equals(item[join.toField])) || (!equalsId && doc[join.fromField] === item[join.toField])) {
+                        if ((equalsId && fromValue && fromValue.equals(item[join.toField])) || (!equalsId && fromValue === item[join.toField])) {
                             if (join.onlyOne) {
                                 doc[join.resField] = item;
                                 break;
