@@ -1,5 +1,7 @@
 // TypeScript file
-let CryptoJS: {
+declare let module;
+declare let require;
+declare let CryptoJS: {
     MD5: (...args) => { toString: (...args) => string, concat: (...args) => any, words: any },
     AES: {
         encrypt: (...args) => { toString: (...args) => string, ciphertext: any },

@@ -1,5 +1,3 @@
-// TypeScript file
-var CryptoJS;
 var wssnet;
 (function (wssnet) {
     var PackData = /** @class */ (function () {
