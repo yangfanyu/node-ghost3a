@@ -157,13 +157,13 @@ namespace wssnet {
         private timeout: number;//请求超时（毫秒）
         private heartick: number;//心跳间隔（秒）
         private conntick: number;//重连间隔（秒）
-        private timer: any;//秒钟计时器
+        private timer: number;//秒钟计时器
         private timerInc: number;//秒数自增量
         private reqIdInc: number;//请求自增量
         private netDelay: number;//网络延迟
         private retryCnt: number;//断线重连尝试次数
-        private listeners: any;//监听集合
-        private requests: any;//请求集合
+        private listeners: { [key: string]: Listener[] };//监听集合
+        private requests: { [key: string]: Request };//请求集合
         private logLevel: number;//调试信息输出级别
         private socket: WebSocket;//套接字
         private expired: boolean;//是否已经销毁
@@ -225,12 +225,10 @@ namespace wssnet {
             let time: number = Date.now();
             let list: string[] = [];
             for (let reqId in this.requests) {
-                if (this.requests.hasOwnProperty(reqId)) {
-                    let request: Request = this.requests[reqId];
-                    if (time - request.time > this.timeout) {
-                        request.callError(new Response(504, 'Gateway Timeout'));
-                        list.push(reqId);
-                    }
+                let request: Request = this.requests[reqId];
+                if (time - request.time > this.timeout) {
+                    request.callError(new Response(504, 'Gateway Timeout'));
+                    list.push(reqId);
                 }
             }
             for (let i = 0; i < list.length; i++) {

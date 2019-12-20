@@ -172,12 +172,10 @@ var wssnet;
             var time = Date.now();
             var list = [];
             for (var reqId in this.requests) {
-                if (this.requests.hasOwnProperty(reqId)) {
-                    var request = this.requests[reqId];
-                    if (time - request.time > this.timeout) {
-                        request.callError(new Response(504, 'Gateway Timeout'));
-                        list.push(reqId);
-                    }
+                var request = this.requests[reqId];
+                if (time - request.time > this.timeout) {
+                    request.callError(new Response(504, 'Gateway Timeout'));
+                    list.push(reqId);
                 }
             }
             for (var i = 0; i < list.length; i++) {
