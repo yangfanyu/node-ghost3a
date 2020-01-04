@@ -1,24 +1,25 @@
 // TypeScript file
-declare let module;
-declare let require;
-declare let CryptoJS: {
-    MD5: (...args) => { toString: (...args) => string, concat: (...args) => any, words: any },
-    AES: {
-        encrypt: (...args) => { toString: (...args) => string, ciphertext: any },
-        decrypt: (...args) => { toString: (...args) => string },
-    },
-    HmacSHA256: (...args) => { toString: (...args) => string };
-    lib: {
-        WordArray: {
-            random: (...args) => { toString: (...args) => string, concat: (...args) => any, words: any };
-            create: (...args) => { toString: (...args) => string, concat: (...args) => any, words: any };
-        }
-    },
-    enc: { Utf8: any, Base64: any },
-    mode: { CBC: any }
-    pad: { Pkcs7: any }
-};
 namespace wssnet {
+    declare let module;
+    declare let require;
+    declare let CryptoJS: {
+        MD5: (...args) => { toString: (...args) => string, concat: (...args) => any, words: any },
+        AES: {
+            encrypt: (...args) => { toString: (...args) => string, ciphertext: any },
+            decrypt: (...args) => { toString: (...args) => string },
+        },
+        HmacSHA256: (...args) => { toString: (...args) => string };
+        lib: {
+            WordArray: {
+                random: (...args) => { toString: (...args) => string, concat: (...args) => any, words: any };
+                create: (...args) => { toString: (...args) => string, concat: (...args) => any, words: any };
+            }
+        },
+        enc: { Utf8: any, Base64: any },
+        mode: { CBC: any }
+        pad: { Pkcs7: any }
+    };
+
     export class PackData {
         //route
         public static readonly ROUTE_HEARTICK = '$heartick$';//心跳包路由
@@ -157,7 +158,7 @@ namespace wssnet {
         private timeout: number;//请求超时（毫秒）
         private heartick: number;//心跳间隔（秒）
         private conntick: number;//重连间隔（秒）
-        private timer: number;//秒钟计时器
+        private timer: any;//秒钟计时器
         private timerInc: number;//秒数自增量
         private reqIdInc: number;//请求自增量
         private netDelay: number;//网络延迟
@@ -434,13 +435,14 @@ namespace wssnet {
             return this.socket && this.socket.readyState === WebSocket.OPEN;
         }
     }
-}
-if (typeof module === 'object') {
-    if (typeof CryptoJS === 'undefined') {
-        CryptoJS = require('crypto-js');
+
+    if (typeof module === 'object') {
+        if (typeof CryptoJS === 'undefined') {
+            CryptoJS = require('crypto-js');
+        }
+        if (typeof WebSocket === 'undefined') {
+            WebSocket = require('ws');
+        }
+        module.exports = wssnet;
     }
-    if (typeof WebSocket === 'undefined') {
-        WebSocket = require('ws');
-    }
-    module.exports = wssnet;
 }

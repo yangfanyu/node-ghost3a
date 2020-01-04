@@ -1,6 +1,6 @@
 {
     "name": "node-ghost3a",
-    "version": "3.1.17",
+    "version": "3.1.18",
     "private": false,
     "description": "Lightweight, web server, websocket server, websocket client. Cluster support. Simple and easy to use.",
     "main": "ghost3a.js",
@@ -30,6 +30,7 @@
     "homepage": "https://github.com/yangfanyu/node-ghost3a#readme",
     "dependencies": {
         "body-parser": "^1.19.0",
+        "cheerio": "^1.0.0-rc.3",
         "compression": "^1.7.4",
         "cookie-parser": "^1.4.4",
         "crc": "^3.8.0",

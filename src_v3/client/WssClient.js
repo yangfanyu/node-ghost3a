@@ -1,3 +1,4 @@
+// TypeScript file
 var wssnet;
 (function (wssnet) {
     var PackData = /** @class */ (function () {
@@ -389,13 +390,13 @@ var wssnet;
         return Ghost3a;
     }());
     wssnet.Ghost3a = Ghost3a;
+    if (typeof module === 'object') {
+        if (typeof CryptoJS === 'undefined') {
+            CryptoJS = require('crypto-js');
+        }
+        if (typeof WebSocket === 'undefined') {
+            WebSocket = require('ws');
+        }
+        module.exports = wssnet;
+    }
 })(wssnet || (wssnet = {}));
-if (typeof module === 'object') {
-    if (typeof CryptoJS === 'undefined') {
-        CryptoJS = require('crypto-js');
-    }
-    if (typeof WebSocket === 'undefined') {
-        WebSocket = require('ws');
-    }
-    module.exports = wssnet;
-}
