@@ -1,3 +1,7 @@
+## 3.0.56
+
+- Upgrade dependency libraries
+
 ## 3.0.54
 
 - Add md5 method.

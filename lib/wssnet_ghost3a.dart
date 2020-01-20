@@ -90,11 +90,11 @@ class PackData {
         Encrypter aesCrypto = Encrypter(AES(Key(key), mode: AESMode.cbc, padding: 'PKCS7'));
         String decRes = aesCrypto.decrypt(Encrypted(body), iv: IV(iv));
         Map<String, dynamic> obj = json.decode(decRes);
-        return new PackData(obj['route'], obj['reqId'], obj['message']);
+        return PackData(obj['route'], obj['reqId'], obj['message']);
       } else {
         //json string
         Map<String, dynamic> obj = data is String ? json.decode(data) : {};
-        return new PackData(obj['route'], obj['reqId'], obj['message']);
+        return PackData(obj['route'], obj['reqId'], obj['message']);
       }
     } catch (e) {
       return null;
