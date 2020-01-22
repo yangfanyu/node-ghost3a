@@ -1,6 +1,6 @@
 {
     "name": "node-ghost3a",
-    "version": "3.1.18",
+    "version": "3.1.19",
     "private": false,
     "description": "Lightweight, web server, websocket server, websocket client. Cluster support. Simple and easy to use.",
     "main": "ghost3a.js",
@@ -39,11 +39,11 @@
         "express-xml-bodyparser": "^0.3.0",
         "helmet": "^3.21.2",
         "log4js": "^4.5.1",
-        "mongodb": "^3.4.1",
+        "mongodb": "^3.5.2",
         "multer": "^1.4.2",
         "request": "^2.88.0",
         "saslprep": "^1.0.3",
-        "uuid": "^3.3.3",
+        "uuid": "^3.4.0",
         "ws": "^7.2.1",
         "xml2js": "^0.4.23"
     }

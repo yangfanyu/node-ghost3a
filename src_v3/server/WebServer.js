@@ -202,20 +202,25 @@ class WebServer {
         });
     }
     /**
-     * 返回HTTP/S服务器实例
-     * @returns {Server | any}
+     * 返回Logger实例
+     * @return {Logger}
      */
-    get server() { return this._server; }
+    get logger() {return this._logger;}
+    /**
+     * 返回express
+     * @returns {createApplication}
+     */
+    get express() { return this._express; }
     /**
      * 返回express实例
      * @returns {Express}
      */
     get webapp() { return this._webapp; }
     /**
-     * 返回express
-     * @returns {createApplication}
+     * 返回HTTP/S服务器实例
+     * @returns {Server | any}
      */
-    get express() { return this._express; }
+    get server() { return this._server; }
     /**
      * 确保返回一个object类型
      * @param config

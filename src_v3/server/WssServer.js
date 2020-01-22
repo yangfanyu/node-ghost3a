@@ -732,6 +732,11 @@ class WssServer {
     _validateInnerData(data) {
         return this._context.getMd5(data.route + data.word + this._config.secret) === data.sign;
     }
+    /**
+     * 返回Logger实例
+     * @return {Logger}
+     */
+    get logger() {return this._logger;}
 }
 
 /**
