@@ -1,6 +1,5 @@
 'use strict';
 const WebSocket = require('ws');
-
 /**
  * ws的WebSocket封装类
  * ws相关信息：https://github.com/websockets/ws
@@ -154,12 +153,8 @@ class WssSession {
     isExpired(timeout) {
         return Date.now() > this._lastHeart + timeout;
     }
-
     get id() { return this._id; }
-
     get ip() { return this._ip; }
-
     get uid() { return this._uid || 'uid'; }
 }
-
 module.exports = WssSession;

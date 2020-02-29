@@ -1,6 +1,5 @@
 'use strict';
 const fs = require('fs');
-
 /**
  * 该类将符合本库模板的服务器配置文件解析为pm2启动所需的配置信息
  * 启动命令如: pm2 start ecosystem.config.js --env development
@@ -135,5 +134,4 @@ class PM2Adapter {
         return apps;
     }
 }
-
 module.exports = PM2Adapter;

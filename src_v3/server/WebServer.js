@@ -8,7 +8,6 @@ const multer = require('multer');
 const uuid = require('uuid/v1');
 const https = require('https');
 const http = require('http');
-
 /**
  * 对express及其常用插件封装的类
  * express相关信息：https://github.com/expressjs/express
@@ -208,7 +207,7 @@ class WebServer {
     get logger() {return this._logger;}
     /**
      * 返回express
-     * @returns {createApplication}
+     * @returns {import('express')}
      */
     get express() { return this._express; }
     /**
@@ -231,5 +230,4 @@ class WebServer {
         return config && typeof config === 'object' ? config : {};
     }
 }
-
 module.exports = WebServer;

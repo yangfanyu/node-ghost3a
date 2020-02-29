@@ -1,6 +1,5 @@
 'use strict';
 const {MongoClient, ObjectID} = require('mongodb');
-
 /**
  * 对node-mongodb-native封装的类
  * node-mongodb-native相关信息：http://mongodb.github.io/node-mongodb-native/
@@ -313,5 +312,4 @@ class MongoMan {
         return new ObjectID(hexstr);
     }
 }
-
 module.exports = MongoMan;

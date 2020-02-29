@@ -6,7 +6,6 @@ const https = require('https');
 const http = require('http');
 const WssSession = require('./WssSession');
 const WssClient = require('../client/WssClient').Ghost3a;
-
 /**
  * 对ws封装的类
  * ws相关信息：https://github.com/websockets/ws
@@ -705,7 +704,6 @@ class WssServer {
             this._logger.debug('cluster onretry->', node.grp, node.url, count, 'times');
         }, null, this);
     }
-
     /**
      * 生成内部签名数据包
      * @param tid {string|null}
@@ -738,7 +736,6 @@ class WssServer {
      */
     get logger() {return this._logger;}
 }
-
 /**
  * crypto-js相关信息：https://cryptojs.gitbook.io/docs/
  */
@@ -845,5 +842,4 @@ class PackData {
         return CryptoJS.MD5(data).toString();
     }
 }
-
 module.exports = WssServer;

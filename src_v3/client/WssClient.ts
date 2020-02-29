@@ -19,17 +19,15 @@ namespace wssnet {
         mode: { CBC: any }
         pad: { Pkcs7: any }
     };
-
     export class PackData {
         //route
         public static readonly ROUTE_HEARTICK = '$heartick$';//心跳包路由
         public static readonly ROUTE_RESPONSE = '$response$';//响应请求路由
         //code
-        public static readonly CODE_RETRY = { code: 4101, data: 'retry' };
-        public static readonly CODE_CLOSE = { code: 4102, data: 'close' };
-        public static readonly CODE_ERROR = { code: 4103, data: 'error' };
-        public static readonly CODE_CALL = { code: 4104, data: 'call' };
-
+        public static readonly CODE_RETRY = {code: 4101, data: 'retry'};
+        public static readonly CODE_CLOSE = {code: 4102, data: 'close'};
+        public static readonly CODE_ERROR = {code: 4103, data: 'error'};
+        public static readonly CODE_CALL = {code: 4104, data: 'call'};
         public route: string;//路由
         public reqId: number;//序号
         public message: any;//报文数据
@@ -71,7 +69,7 @@ namespace wssnet {
                     const iv = CryptoJS.lib.WordArray.create(words.slice(4, 8));
                     const key = CryptoJS.HmacSHA256(salt, pwd);
                     const body = CryptoJS.lib.WordArray.create(words.slice(8));
-                    const decRes = CryptoJS.AES.decrypt({ ciphertext: body }, key, {
+                    const decRes = CryptoJS.AES.decrypt({ciphertext: body}, key, {
                         iv: iv,
                         mode: CryptoJS.mode.CBC,
                         padding: CryptoJS.pad.Pkcs7
@@ -96,14 +94,12 @@ namespace wssnet {
         public onmessage: (message: any, params?: any[]) => void;
         public context: any;
         public params: any[];
-
         public constructor(once: boolean, onmessage: (message: any, params?: any[]) => void, context?: any, params?: any[]) {
             this.once = once;
             this.onmessage = onmessage;
             this.context = context || this;
             this.params = params;
         }
-
         public callMessage(message: any) {
             if (this.onmessage) {
                 this.onmessage.call(this.context, message, this.params);
@@ -116,7 +112,6 @@ namespace wssnet {
         public onerror: (resp: Response, params?: any[]) => void;
         public context: any;
         public params: any[];
-
         public constructor(onsuccess?: (resp: Response, params?: any[]) => void, onerror?: (resp: Response, params?: any[]) => void, context?: any, params?: any[]) {
             this.time = Date.now();
             this.onsuccess = onsuccess;
@@ -124,13 +119,11 @@ namespace wssnet {
             this.context = context || this;
             this.params = params;
         }
-
         public callSuccess(resp: Response) {
             if (this.onsuccess) {
                 this.onsuccess.call(this.context, resp, this.params);
             }
         }
-
         public callError(resp: Response) {
             if (this.onerror) {
                 this.onerror.call(this.context, resp, this.params);
@@ -140,7 +133,6 @@ namespace wssnet {
     export class Response {
         public code: number;//状态码
         public data: any;//正确数据或错误描述
-
         public constructor(code: number, data: any) {
             this.code = code;
             this.data = data;
@@ -151,7 +143,6 @@ namespace wssnet {
         public static readonly LOG_LEVEL_DATA = 2;
         public static readonly LOG_LEVEL_INFO = 3;
         public static readonly LOG_LEVEL_NONE = 4;
-
         private host: string;//服务器地址
         private pwd: string;//数据加解密口令
         private binary: boolean;//是否用二进制传输
@@ -176,7 +167,6 @@ namespace wssnet {
         private onsecond: (second: number, delay: number, params?: any[]) => void;
         private context: any;
         private params: any[];
-
         public constructor(host: string, pwd: string, binary: boolean, timeout: number = 8000, heartick: number = 60, conntick: number = 3) {
             this.host = host.indexOf('https:') == 0 ? host.replace('https:', 'wss:') : (host.indexOf('http:') == 0 ? host.replace('http:', 'ws:') : host);
             this.pwd = pwd;
@@ -195,30 +185,25 @@ namespace wssnet {
             this.socket = null;
             this.expired = false;
         }
-
         private onSocketOpen(e: any) {
             if (this.logLevel < Ghost3a.LOG_LEVEL_NONE) console.log('connected', this.host);
             this.retryCnt = 0;//重置重连次数为0
             if (this.onopen) this.onopen.call(this.context, this.params);
         }
-
         private onSocketMessage(e: any): void {
             if (this.expired) return;
             this.readPackData(e.data);
         }
-
         private onSocketClose(e: any) {
             if (this.expired) return;
             this.safeClose(PackData.CODE_CLOSE.code, PackData.CODE_CLOSE.data);
             if (this.onclose) this.onclose.call(this.context, e.code || 0, e.reason || 'Unknow Reason', this.params);
         }
-
         private onSocketError(e: any) {
             if (this.expired) return;
             this.safeClose(PackData.CODE_ERROR.code, PackData.CODE_ERROR.data);
             if (this.onerror) this.onerror.call(this.context, e.message || 'Unknow Error', this.params);
         }
-
         private onTimerTick() {
             //秒数自增
             this.timerInc++;
@@ -252,7 +237,6 @@ namespace wssnet {
                 this.onsecond.call(this.context, this.timerInc, this.netDelay, this.params);
             }
         }
-
         private sendPackData(pack: PackData) {
             if (this.expired) return;
             if (this.isConnected()) {
@@ -265,7 +249,6 @@ namespace wssnet {
                 this.printPackData('sendPackData >>>', pack);
             }
         }
-
         private readPackData(data: any) {
             let pack = PackData.deserialize(data, this.pwd);
             if (!pack) {
@@ -300,7 +283,6 @@ namespace wssnet {
                     break;
             }
         }
-
         private printPackData(title: string, pack: PackData) {
             if (pack.route == PackData.ROUTE_HEARTICK) {
                 if (this.logLevel == Ghost3a.LOG_LEVEL_ALL) {
@@ -318,25 +300,22 @@ namespace wssnet {
                 console.groupEnd();
             }
         }
-
         private safeOpen() {
             this.safeClose(PackData.CODE_RETRY.code, PackData.CODE_RETRY.data);//关闭旧连接
             if (this.expired) return;
-            this.socket = new WebSocket(this.host, typeof module === 'object' ? <any>{ rejectUnauthorized: false } : void 0);//创建WebSocket对象
+            this.socket = new WebSocket(this.host, typeof module === 'object' ? <any>{rejectUnauthorized: false} : void 0);//创建WebSocket对象
             this.socket.binaryType = 'arraybuffer';
             this.socket.onopen = (e) => { this.onSocketOpen(e)};//添加连接打开侦听，连接成功会调用此方法
             this.socket.onmessage = (e) => { this.onSocketMessage(e) };//添加收到数据侦听，收到数据会调用此方法
             this.socket.onclose = (e) => { this.onSocketClose(e) };//添加连接关闭侦听，手动关闭或者服务器关闭连接会调用此方法
             this.socket.onerror = (e) => { this.onSocketError(e) };//添加异常侦听，出现异常会调用此方法
         }
-
         private safeClose(code: number, reason: string) {
             if (this.socket) {
                 this.socket.close(code, reason);
                 this.socket = null;
             }
         }
-
         public connect(
             onopen: (params?: any[]) => void,
             onclose: (code: number, reason: string, params?: any[]) => void,
@@ -355,7 +334,6 @@ namespace wssnet {
             this.safeOpen();//安全开启连接
             this.timer = setInterval(() => { this.onTimerTick() }, 1000);
         }
-
         public disconnect() {
             if (this.logLevel < Ghost3a.LOG_LEVEL_NONE) console.log('disconnected', this.host);
             this.expired = true;
@@ -366,13 +344,11 @@ namespace wssnet {
             }
             this.safeClose(PackData.CODE_CALL.code, PackData.CODE_CALL.data);//安全关闭连接
         }
-
         public request(route: string, message: any, onsuccess?: (resp: Response, params?: any[]) => void, onerror?: (resp: Response, params?: any[]) => void, context?: any, params?: any[]) {
             let reqId = this.reqIdInc++;
             if (onsuccess || onerror) this.requests[reqId] = new Request(onsuccess, onerror, context, params);//有监听器的放入请求队列
             this.sendPackData(new PackData(route, reqId, message));
         }
-
         public addListener(route: string, once: boolean, onmessage: (message: any, params?: any[]) => void, context?: any, params?: any[]) {
             let listeners: Listener[] = this.listeners[route];
             if (listeners == void 0) {
@@ -381,7 +357,6 @@ namespace wssnet {
             }
             listeners.push(new Listener(once, onmessage, context, params));
         }
-
         public removeListener(route: string, onmessage?: (message: any, params?: any[]) => void) {
             let listeners: Listener[] = this.listeners[route];
             if (!listeners) return;
@@ -406,7 +381,6 @@ namespace wssnet {
                 }
             }
         }
-
         public triggerEvent(pack: PackData) {
             let listeners: Listener[] = this.listeners[pack.route];
             if (!listeners) return;
@@ -422,20 +396,16 @@ namespace wssnet {
                 this.removeListener(pack.route, oncelist[i].onmessage);
             }
         }
-
         public setLogLevel(level: number) {
             this.logLevel = level;
         }
-
         public getNetDelay(): number {
             return this.netDelay;
         }
-
         public isConnected(): boolean {
             return this.socket && this.socket.readyState === WebSocket.OPEN;
         }
     }
-
     if (typeof module === 'object') {
         if (typeof CryptoJS === 'undefined') {
             CryptoJS = require('crypto-js');

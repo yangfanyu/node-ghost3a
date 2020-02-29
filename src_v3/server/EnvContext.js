@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const log4js = require('log4js');
 const CryptoJS = require('crypto-js');
-
 /**
  * 运行环境工具类
  * lo4js相关信息：https://log4js-node.github.io/log4js-node/
@@ -258,5 +257,4 @@ class EnvContext {
      */
     get encode() { return this._encode; }
 }
-
 module.exports = EnvContext;
