@@ -1,4 +1,4 @@
-## 3.1.23
+## 3.1.26
 
 - Fix bug of dart client
 
