@@ -1,3 +1,7 @@
+## 3.1.23
+
+- Fix bug of dart client
+
 ## 3.0.56
 
 - Upgrade dependency libraries

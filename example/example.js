@@ -1,7 +1,6 @@
 'use strict';
 const {EnvContext, MongoMan, WssClient} = require('../ghost3a');
 const Ghost3a = WssClient.Ghost3a;
-
 function testMongoMan() {
     let envContext = new EnvContext(__dirname, 'development', 'test', 'localhost', '', 8080);
     envContext.initLog4js(__dirname + '/cfgs/log4js.json');
@@ -78,7 +77,6 @@ function testMongoMan() {
         await mongo.close();
     });
 }
-
 function testWssClient() {
     const net = new Ghost3a('http://localhost:8082/', '123', true, undefined, 3);
     net.setLogLevel(Ghost3a.LOG_LEVEL_ALL);
@@ -97,6 +95,5 @@ function testWssClient() {
         net.disconnect();
     }, 60 * 1000);
 }
-
-testMongoMan();
+// testMongoMan();
 // testWssClient();

@@ -303,6 +303,14 @@ namespace wssnet {
         private safeOpen() {
             this.safeClose(PackData.CODE_RETRY.code, PackData.CODE_RETRY.data);//关闭旧连接
             if (this.expired) return;
+            /**
+             * 经测试JS版本不管是浏览器还是服务端，CONNECTING与OPEN状态都可以直接调用close函数，最终都会为CLOSED
+             * 建立新实例之前可以完美的销毁旧实例，所以无需加锁
+             * 0 CONNECTING - The connection is not yet open.
+             * 1 OPEN - The connection is open and ready to communicate.
+             * 2 CLOSING - The connection is in the process of closing.
+             * 3 CLOSED- The connection is closed.
+             */
             this.socket = new WebSocket(this.host, typeof module === 'object' ? <any>{rejectUnauthorized: false} : void 0);//创建WebSocket对象
             this.socket.binaryType = 'arraybuffer';
             this.socket.onopen = (e) => { this.onSocketOpen(e)};//添加连接打开侦听，连接成功会调用此方法

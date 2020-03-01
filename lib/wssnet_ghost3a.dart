@@ -173,6 +173,7 @@ class Ghost3a {
   Map<int, Request> _requests; //请求集合
   int _logLevel; //调试信息输出级别
   WebSocket _socket; //套接字
+  bool _locker; //连接锁
   bool _expired; //是否已经销毁
   //状态监听
   Ghost3aOnopen _onopen;
@@ -198,6 +199,7 @@ class Ghost3a {
     _requests = {};
     _logLevel = Ghost3a.LOG_LEVEL_NONE;
     _socket = null;
+    _locker = false;
     _expired = false;
   }
 
@@ -324,11 +326,20 @@ class Ghost3a {
   void _safeOpen() {
     _safeClose(PackData.CODE_RETRY['code'], PackData.CODE_RETRY['data']); //关闭旧连接
     if (_expired) return;
+    /**
+     * dart版本的_socket是连接建立后异步赋值的，所以必须要加锁来保证同时只有一个连接在尝试建立
+     * 否则WebSocket.connect调用了多少次就会then或catchError多少次，且同时尝试多个连接很混乱
+     */
+    if (_locker) return;
+    _locker = true; //加锁
     WebSocket.connect(_host).then((socket) {
       _socket = socket;
+      _locker = false; //解锁
+      //手动回调，添加监听，与JS保持一致
       _onSocketConnect();
       _socket.listen(_onSocketMessage, onError: _onSocketError, onDone: _onSocketClose);
     }).catchError((e) {
+      _locker = false; //解锁
       _onSocketError(e);
     });
   }
