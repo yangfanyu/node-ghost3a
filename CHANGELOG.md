@@ -1,3 +1,6 @@
+## 3.1.27
+
+- Reduce crypto version to 2.1.3 for dart client
 ## 3.1.26
 
 - Fix bug of dart client
