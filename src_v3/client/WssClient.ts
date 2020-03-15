@@ -24,10 +24,10 @@ namespace wssnet {
         public static readonly ROUTE_HEARTICK = '$heartick$';//心跳包路由
         public static readonly ROUTE_RESPONSE = '$response$';//响应请求路由
         //code
-        public static readonly CODE_RETRY = {code: 4101, data: 'retry'};
-        public static readonly CODE_CLOSE = {code: 4102, data: 'close'};
-        public static readonly CODE_ERROR = {code: 4103, data: 'error'};
-        public static readonly CODE_CALL = {code: 4104, data: 'call'};
+        public static readonly CODE_RETRY = { code: 4101, data: 'retry' };
+        public static readonly CODE_CLOSE = { code: 4102, data: 'close' };
+        public static readonly CODE_ERROR = { code: 4103, data: 'error' };
+        public static readonly CODE_CALL = { code: 4104, data: 'call' };
         public route: string;//路由
         public reqId: number;//序号
         public message: any;//报文数据
@@ -69,7 +69,7 @@ namespace wssnet {
                     const iv = CryptoJS.lib.WordArray.create(words.slice(4, 8));
                     const key = CryptoJS.HmacSHA256(salt, pwd);
                     const body = CryptoJS.lib.WordArray.create(words.slice(8));
-                    const decRes = CryptoJS.AES.decrypt({ciphertext: body}, key, {
+                    const decRes = CryptoJS.AES.decrypt({ ciphertext: body }, key, {
                         iv: iv,
                         mode: CryptoJS.mode.CBC,
                         padding: CryptoJS.pad.Pkcs7
@@ -158,6 +158,7 @@ namespace wssnet {
         private requests: { [key: string]: Request };//请求集合
         private logLevel: number;//调试信息输出级别
         private socket: WebSocket;//套接字
+        private paused: boolean;//是否暂停重连
         private expired: boolean;//是否已经销毁
         //状态监听
         private onopen: (params?: any[]) => void;
@@ -183,6 +184,7 @@ namespace wssnet {
             this.requests = {};
             this.logLevel = Ghost3a.LOG_LEVEL_NONE;
             this.socket = null;
+            this.paused = false;
             this.expired = false;
         }
         private onSocketOpen(e: any) {
@@ -226,7 +228,7 @@ namespace wssnet {
                     this.sendPackData(new PackData(PackData.ROUTE_HEARTICK, this.reqIdInc++, Date.now()));//发送心跳包
                 }
             } else {
-                if (this.timerInc % this.conntick == 0) {
+                if (this.timerInc % this.conntick == 0 && !this.paused) {
                     this.retryCnt++;//增加重连次数
                     if (this.onretry) this.onretry.call(this.context, this.retryCnt, this.params);
                     this.safeOpen();//安全开启连接
@@ -311,9 +313,9 @@ namespace wssnet {
              * 2 CLOSING - The connection is in the process of closing.
              * 3 CLOSED- The connection is closed.
              */
-            this.socket = new WebSocket(this.host, typeof module === 'object' ? <any>{rejectUnauthorized: false} : void 0);//创建WebSocket对象
+            this.socket = new WebSocket(this.host, typeof module === 'object' ? <any>{ rejectUnauthorized: false } : void 0);//创建WebSocket对象
             this.socket.binaryType = 'arraybuffer';
-            this.socket.onopen = (e) => { this.onSocketOpen(e)};//添加连接打开侦听，连接成功会调用此方法
+            this.socket.onopen = (e) => { this.onSocketOpen(e) };//添加连接打开侦听，连接成功会调用此方法
             this.socket.onmessage = (e) => { this.onSocketMessage(e) };//添加收到数据侦听，收到数据会调用此方法
             this.socket.onclose = (e) => { this.onSocketClose(e) };//添加连接关闭侦听，手动关闭或者服务器关闭连接会调用此方法
             this.socket.onerror = (e) => { this.onSocketError(e) };//添加异常侦听，出现异常会调用此方法
@@ -404,16 +406,18 @@ namespace wssnet {
                 this.removeListener(pack.route, oncelist[i].onmessage);
             }
         }
-        public setLogLevel(level: number) {
-            this.logLevel = level;
-        }
-        public getNetDelay(): number {
-            return this.netDelay;
-        }
-        public isConnected(): boolean {
-            return this.socket && this.socket.readyState === WebSocket.OPEN;
-        }
+
+        public pauseReconnect() { this.paused = true; }
+
+        public resumeReconnect() { this.paused = false; }
+
+        public setLogLevel(level: number) { this.logLevel = level; }
+
+        public getNetDelay(): number { return this.netDelay; }
+
+        public isConnected(): boolean { return this.socket && this.socket.readyState === WebSocket.OPEN; }
     }
+
     if (typeof module === 'object') {
         if (typeof CryptoJS === 'undefined') {
             CryptoJS = require('crypto-js');

@@ -138,6 +138,7 @@ var wssnet;
             this.requests = {};
             this.logLevel = Ghost3a.LOG_LEVEL_NONE;
             this.socket = null;
+            this.paused = false;
             this.expired = false;
         }
         Ghost3a.prototype.onSocketOpen = function (e) {
@@ -189,7 +190,7 @@ var wssnet;
                 }
             }
             else {
-                if (this.timerInc % this.conntick == 0) {
+                if (this.timerInc % this.conntick == 0 && !this.paused) {
                     this.retryCnt++; //增加重连次数
                     if (this.onretry)
                         this.onretry.call(this.context, this.retryCnt, this.params);
@@ -382,15 +383,11 @@ var wssnet;
                 this.removeListener(pack.route, oncelist[i].onmessage);
             }
         };
-        Ghost3a.prototype.setLogLevel = function (level) {
-            this.logLevel = level;
-        };
-        Ghost3a.prototype.getNetDelay = function () {
-            return this.netDelay;
-        };
-        Ghost3a.prototype.isConnected = function () {
-            return this.socket && this.socket.readyState === WebSocket.OPEN;
-        };
+        Ghost3a.prototype.pauseReconnect = function () { this.paused = true; };
+        Ghost3a.prototype.resumeReconnect = function () { this.paused = false; };
+        Ghost3a.prototype.setLogLevel = function (level) { this.logLevel = level; };
+        Ghost3a.prototype.getNetDelay = function () { return this.netDelay; };
+        Ghost3a.prototype.isConnected = function () { return this.socket && this.socket.readyState === WebSocket.OPEN; };
         Ghost3a.LOG_LEVEL_ALL = 1;
         Ghost3a.LOG_LEVEL_DATA = 2;
         Ghost3a.LOG_LEVEL_INFO = 3;
