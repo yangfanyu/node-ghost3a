@@ -22,7 +22,7 @@ envContext.configure('development|production', 'http', () => {
     //加载静态资源
     webServer.webapp.use('/', webServer.express.static('./web', {maxAge: envContext.getContext('maxAge')}));
     webServer.webapp.use('/crypto.js', webServer.express.static('../node_modules/crypto-js/crypto-js.js', {maxAge: envContext.getContext('maxAge')}));
-    webServer.webapp.use('/wssnet.js', webServer.express.static('../src_v3/client/WssClient.min.js', {maxAge: envContext.getContext('maxAge')}));
+    webServer.webapp.use('/wssnet.js', webServer.express.static('../src/client/WssClient.min.js', {maxAge: envContext.getContext('maxAge')}));
     // 注册动态请求
     // webServer.webapp.all('xxxxxxxx', (req, resp) => { });
     //启动服务器
