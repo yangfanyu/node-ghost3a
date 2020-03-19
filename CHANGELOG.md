@@ -1,3 +1,7 @@
+## 3.1.29
+
+- Modify nodejs server framework. 
+
 ## 3.1.28
 
 - Add switch for client to control automatic reconnection

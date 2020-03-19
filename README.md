@@ -34,16 +34,14 @@
   Edit dependencies in _pubspec.yaml_
   ```
      dependencies:
-       wssnet_ghost3a: ^3.0.52
+       wssnet_ghost3a: ^3.1.29
   ```  
   
   API usage is the same as index.html in example.
   
 # API document
 
-  ~~src_v2~~ is deprecated
-
-  See the source code comments in src_v3 for the framework. My notes are very detailed.
+  See the source code comments in src for the framework. My notes are very detailed.
 
 
 
