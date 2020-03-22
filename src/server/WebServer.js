@@ -52,10 +52,10 @@ class WebServer {
             cookieSecret: uuid(),
             cookieOptions: {},
             bodyParserJson: {},
-            bodyParserForm: {extended: true},
+            bodyParserForm: { extended: true },
             uploadKey: null,
             uploadDir: null,
-            uploadMimeTypes: {'image/jpg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/bmp': 'bmp'}
+            uploadMimeTypes: { 'image/jpg': 'jpg', 'image/png': 'png', 'image/gif': 'gif', 'image/bmp': 'bmp' }
         };
         Object.assign(this._config, config);//拷贝配置信息
         //绑定log4js实例
@@ -142,7 +142,7 @@ class WebServer {
                     }
                 },
                 filename: (req, file, callback) => {
-                    const suffix = this._config.uploadMimeTypes [file.mimetype.toLowerCase()];
+                    const suffix = this._config.uploadMimeTypes[file.mimetype.toLowerCase()];
                     if (suffix) {
                         callback(null, uuid() + '.' + suffix);
                     } else {
@@ -204,7 +204,7 @@ class WebServer {
      * 返回Logger实例
      * @return {Logger}
      */
-    get logger() {return this._logger;}
+    get logger() { return this._logger; }
     /**
      * 返回express
      * @returns {import('express')}

@@ -124,7 +124,7 @@ class WssServer {
         delete wsscfg.port;
         if (wsscfg.noServer) this._logger.warn('ingore wsscfg.noServer');
         delete wsscfg.noServer;
-        this._wsscfg = wsscfg.server ? {} : {server: context.ssls ? https.createServer(context.readSSLKerCert()) : http.createServer()};
+        this._wsscfg = wsscfg.server ? {} : { server: context.ssls ? https.createServer(context.readSSLKerCert()) : http.createServer() };
         Object.assign(this._wsscfg, wsscfg);//拷贝ws配置信息
         //绑定app和server
         this._wssapp = new WebSocket.Server(this._wsscfg);//创建ws应用实例
@@ -193,9 +193,16 @@ class WssServer {
      * 绑定uid到session
      * @param session {WssSession}
      * @param uid {string}
+     * @param closeOld {boolean}
      */
-    bindUid(session, uid) {
+    bindUid(session, uid, closeOld = false) {
         this.unbindUid(session);//先解绑旧的uid
+        if (this._sessionMap[uid]) {
+            this.unbindUid(this._sessionMap[uid]);//再解绑旧的session
+            if (closeOld) {
+                this._sessionMap[uid].close(PackData.CODE_NEWBIND.code, PackData.CODE_NEWBIND.data);//关闭旧的session
+            }
+        }
         session.bindUid(uid);
         this._sessionMap[uid] = session;//绑定到_sessionMap
         this._logger.debug('bindUid:', session.ip, session.id, session.uid);
@@ -211,12 +218,20 @@ class WssServer {
         session.unbindUid();
     }
     /**
+     * 根据uid从本节点获取session
+     * @param uid {string}
+     * @returns {WssSession}
+     */
+    getSession(uid) {
+        return this._sessionMap[uid];
+    }
+    /**
      * 加入本节点的某个消息推送组
      * @param session {WssSession}
      * @param gid {string}
      */
     joinChannel(session, gid) {
-        const channel = this._channelMap[gid] || {count: 0, sessions: {}};
+        const channel = this._channelMap[gid] || { count: 0, sessions: {} };
         if (!channel.sessions[session.id]) {
             channel.sessions[session.id] = session;
             channel.count++;
@@ -552,7 +567,7 @@ class WssServer {
      * @private
      */
     _onWebSocketConnection(socket, request) {
-        let session = new WssSession(socket, this._context.getIPV4({headers: request.headers, ip: request.connection.remoteAddress}));
+        let session = new WssSession(socket, this._context.getIPV4({ headers: request.headers, ip: request.connection.remoteAddress }));
         this._socketMap[session.id] = session;//绑定到_socketMap
         socket.binaryType = 'arraybuffer';//指定读取格式为arraybuffer
         socket.on('message', (data) => {
@@ -673,7 +688,7 @@ class WssServer {
      * @private
      */
     _getSendOptions() {
-        return {binary: this._config.binary};
+        return { binary: this._config.binary };
     }
     /**
      * 响应心跳包
@@ -734,7 +749,7 @@ class WssServer {
      * 返回Logger实例
      * @return {Logger}
      */
-    get logger() {return this._logger;}
+    get logger() { return this._logger; }
 }
 /**
  * crypto-js相关信息：https://cryptojs.gitbook.io/docs/
@@ -752,14 +767,15 @@ class PackData {
      * 以及：https://github.com/websockets/ws/issues/715
      * @type {{code: number, data: string}}
      */
-    static CODE_PARSE = {code: 4001, data: 'parse error'};
-    static CODE_FORMAT = {code: 4002, data: 'format error'};
-    static CODE_REPEAT = {code: 4003, data: 'repeat error'};
-    static CODE_SIGN = {code: 4004, data: 'sign error'};
-    static CODE_REMOTE = {code: 4005, data: 'remote error'};
-    static CODE_ROUTE = {code: 4006, data: 'route error'};
-    static CODE_SOCKET = {code: 4007, data: 'socket error'};
-    static CODE_TIMEOUT = {code: 4008, data: 'timeout error'};
+    static CODE_PARSE = { code: 4001, data: 'parse error' };
+    static CODE_FORMAT = { code: 4002, data: 'format error' };
+    static CODE_REPEAT = { code: 4003, data: 'repeat error' };
+    static CODE_SIGN = { code: 4004, data: 'sign error' };
+    static CODE_REMOTE = { code: 4005, data: 'remote error' };
+    static CODE_ROUTE = { code: 4006, data: 'route error' };
+    static CODE_SOCKET = { code: 4007, data: 'socket error' };
+    static CODE_TIMEOUT = { code: 4008, data: 'timeout error' };
+    static CODE_NEWBIND = { code: 4009, data: 'newbind error' };
     /**
      * 数据包
      * @param route {string}
@@ -817,7 +833,7 @@ class PackData {
                 const iv = CryptoJS.lib.WordArray.create(words.slice(4, 8));
                 const key = CryptoJS.HmacSHA256(salt, pwd);
                 const body = CryptoJS.lib.WordArray.create(words.slice(8));
-                const decRes = CryptoJS.AES.decrypt({ciphertext: body}, key, {
+                const decRes = CryptoJS.AES.decrypt({ ciphertext: body }, key, {
                     iv: iv,
                     mode: CryptoJS.mode.CBC,
                     padding: CryptoJS.pad.Pkcs7

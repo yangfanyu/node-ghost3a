@@ -55,8 +55,8 @@ class PM2Adapter {
         }
         this._envName = processArgv[envIndex + 1];//--env参数后面的值是运行环境类型
         this._bootDir = bootDir;
-        this._hostName = hostNameFile && fs.existsSync(hostNameFile) ? fs.readFileSync(hostNameFile, {encoding: encode}).trim() : null;//指定文件中读取的主机名称
-        let serversStr = fs.readFileSync(serversFile, {encoding: encode});
+        this._hostName = hostNameFile && fs.existsSync(hostNameFile) ? fs.readFileSync(hostNameFile, { encoding: encode }).trim() : null;//指定文件中读取的主机名称
+        let serversStr = fs.readFileSync(serversFile, { encoding: encode });
         serversStr = serversStr.replace(new RegExp('\\${opt:bootDir}', 'gm'), this._bootDir);
         serversStr = serversStr.replace(new RegExp('\\${opt:hostName}', 'gm'), this._hostName);
         this._servers = JSON.parse(serversStr);//指定文件中读取服务器配置信息

@@ -66,7 +66,7 @@ class EnvContext {
      * @param filepath {string} log4js的配置文件绝对路径
      */
     initLog4js(filepath) {
-        let logStr = fs.readFileSync(filepath, {encoding: this._encode});
+        let logStr = fs.readFileSync(filepath, { encoding: this._encode });
         logStr = logStr.replace(new RegExp('\\${opt:appDir}', 'gm'), this._appDir);
         logStr = logStr.replace(new RegExp('\\${opt:appEnv}', 'gm'), this._appEnv);
         logStr = logStr.replace(new RegExp('\\${opt:appName}', 'gm'), this._appName);
@@ -81,7 +81,7 @@ class EnvContext {
      * @returns {*}
      */
     loadConfig(filepath) {
-        const cfgStr = fs.readFileSync(filepath, {encoding: this._encode});
+        const cfgStr = fs.readFileSync(filepath, { encoding: this._encode });
         return JSON.parse(cfgStr)[this._appEnv];
     }
     /**
@@ -189,8 +189,8 @@ class EnvContext {
      */
     readSSLKerCert() {
         return {
-            key: fs.readFileSync(this._appSSLs.key, {encoding: this._encode}),
-            cert: fs.readFileSync(this._appSSLs.cert, {encoding: this._encode})
+            key: fs.readFileSync(this._appSSLs.key, { encoding: this._encode }),
+            cert: fs.readFileSync(this._appSSLs.cert, { encoding: this._encode })
         };
     }
     /**
