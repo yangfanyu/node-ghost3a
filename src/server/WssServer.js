@@ -196,16 +196,16 @@ class WssServer {
      * @param closeold {boolean}
      */
     bindUid(session, uid, closeold = false) {
-        this.unbindUid(session);//先解绑旧的uid
-        if (this._sessionMap[uid]) {
-            if (closeold) {
-                this._sessionMap[uid].close(PackData.CODE_NEWBIND.code, PackData.CODE_NEWBIND.data);//关闭旧的session
-            } else {
-                this.unbindUid(this._sessionMap[uid]);//解绑旧的session
-            }
+        //旧session处理
+        const sessionold = this._sessionMap[uid];
+        if (sessionold) {
+            this.unbindUid(sessionold);//解绑uid对应的旧session（此步骤务必在close之前执行，否则close事件中，会将uid对应的新session移除掉）
+            if (closeold) sessionold.close(PackData.CODE_NEWBIND.code, PackData.CODE_NEWBIND.data);//关闭旧的session
         }
-        session.bindUid(uid);
-        this._sessionMap[uid] = session;//绑定到_sessionMap
+        //新session处理
+        this.unbindUid(session);//新session解绑旧的uid
+        session.bindUid(uid);//新session绑定新的的uid
+        this._sessionMap[uid] = session;//新session绑定到_sessionMap
         this._logger.debug('bindUid:', session.ip, session.id, session.uid);
     };
     /**
