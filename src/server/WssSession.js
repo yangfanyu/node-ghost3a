@@ -155,6 +155,6 @@ class WssSession {
     }
     get id() { return this._id; }
     get ip() { return this._ip; }
-    get uid() { return this._uid || 'uid'; }
+    get uid() { return this._uid; }
 }
 module.exports = WssSession;
