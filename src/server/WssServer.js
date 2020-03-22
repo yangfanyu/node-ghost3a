@@ -193,14 +193,15 @@ class WssServer {
      * 绑定uid到session
      * @param session {WssSession}
      * @param uid {string}
-     * @param closeOld {boolean}
+     * @param closeold {boolean}
      */
-    bindUid(session, uid, closeOld = false) {
+    bindUid(session, uid, closeold = false) {
         this.unbindUid(session);//先解绑旧的uid
         if (this._sessionMap[uid]) {
-            this.unbindUid(this._sessionMap[uid]);//再解绑旧的session
-            if (closeOld) {
+            if (closeold) {
                 this._sessionMap[uid].close(PackData.CODE_NEWBIND.code, PackData.CODE_NEWBIND.data);//关闭旧的session
+            } else {
+                this.unbindUid(this._sessionMap[uid]);//解绑旧的session
             }
         }
         session.bindUid(uid);
