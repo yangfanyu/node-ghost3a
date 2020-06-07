@@ -17,12 +17,12 @@ envContext.configure('development|production', 'http', () => {
     webServer.loadBaseModules();
     webServer.loadPrintModule();
     webServer.loadUploadModule('/upload', (code, data, req, resp) => {
-        resp.json({code: code, data: data});
+        resp.json({ code: code, data: data });
     });
     //加载静态资源
-    webServer.webapp.use('/', webServer.express.static('./web', {maxAge: envContext.getContext('maxAge')}));
-    webServer.webapp.use('/crypto.js', webServer.express.static('../node_modules/crypto-js/crypto-js.js', {maxAge: envContext.getContext('maxAge')}));
-    webServer.webapp.use('/wssnet.js', webServer.express.static('../src/client/WssClient.min.js', {maxAge: envContext.getContext('maxAge')}));
+    webServer.webapp.use('/', webServer.express.static('./web', { maxAge: envContext.getContext('maxAge') }));
+    webServer.webapp.use('/crypto.js', webServer.express.static('../node_modules/crypto-js/crypto-js.js', { maxAge: envContext.getContext('maxAge') }));
+    webServer.webapp.use('/wssnet.js', webServer.express.static('../src/client/WssClient.min.js', { maxAge: envContext.getContext('maxAge') }));
     // 注册动态请求
     // webServer.webapp.all('xxxxxxxx', (req, resp) => { });
     //启动服务器
@@ -36,7 +36,7 @@ envContext.configure('development|production', 'http', () => {
 });
 //WebSocket服务器
 envContext.configure('development|production', 'home|chat', () => {
-    const wssServer = new ghost3a.WssServer(envContext, 'server', {pwd: '123', secret: '456', binary: true, cycle: 10000});
+    const wssServer = new ghost3a.WssServer(envContext, 'server', { pwd: '123', secret: '456', binary: true, cycle: 10000 });
     wssServer.initClusters();
     /**
      * 添加home的路由
@@ -48,45 +48,45 @@ envContext.configure('development|production', 'home|chat', () => {
         wssServer.setRouter('login', (server, session, pack) => {
             if (pack.message.uid) {
                 server.bindUid(session, pack.message.uid);
-                server.response(session, pack, {code: 200, data: '使用ID: ' + pack.message.uid + ' 登录成功'});
+                server.response(session, pack, { code: 200, data: '使用ID: ' + pack.message.uid + ' 登录成功' });
             } else {
-                server.response(session, pack, {code: 500, data: 'uid不能为空'});
+                server.response(session, pack, { code: 500, data: 'uid不能为空' });
             }
         });
         wssServer.setRouter('logout', (server, session, pack) => {
             server.unbindUid(session);
-            server.response(session, pack, {code: 200, data: '已退出登录'});
+            server.response(session, pack, { code: 200, data: '已退出登录' });
         });
         wssServer.setRouter('joinRoom', (server, session, pack) => {
             if (pack.message.gid) {
                 server.joinChannel(session, pack.message.gid);
-                server.response(session, pack, {code: 200, data: '已加入: ' + pack.message.gid + ' 房间'});
+                server.response(session, pack, { code: 200, data: '已加入: ' + pack.message.gid + ' 房间' });
             } else {
-                server.response(session, pack, {code: 500, data: 'gid不能为空'});
+                server.response(session, pack, { code: 500, data: 'gid不能为空' });
             }
         });
         wssServer.setRouter('quitRoom', (server, session, pack) => {
             if (pack.message.gid) {
                 server.quitChannel(session, pack.message.gid);
-                server.response(session, pack, {code: 200, data: '已退出: ' + pack.message.gid + ' 房间'});
+                server.response(session, pack, { code: 200, data: '已退出: ' + pack.message.gid + ' 房间' });
             } else {
-                server.response(session, pack, {code: 500, data: 'gid不能为空'});
+                server.response(session, pack, { code: 500, data: 'gid不能为空' });
             }
         });
         wssServer.setRouter('sendP2P', (server, session, pack) => {
             if (pack.message.uid) {
                 server.pushSession(pack.message.uid, 'onP2PMessage', pack.message.text);
-                server.response(session, pack, {code: 200, data: '发送成功'});
+                server.response(session, pack, { code: 200, data: '发送成功' });
             } else {
-                server.response(session, pack, {code: 500, data: 'uid不能为空'});
+                server.response(session, pack, { code: 500, data: 'uid不能为空' });
             }
         });
         wssServer.setRouter('sendP2P_rmc', (server, session, pack) => {
             if (pack.message.uid) {
                 server.callRemote('chat', 'sendP2P', pack.message);
-                server.response(session, pack, {code: 200, data: '发送成功'});
+                server.response(session, pack, { code: 200, data: '发送成功' });
             } else {
-                server.response(session, pack, {code: 500, data: 'uid不能为空'});
+                server.response(session, pack, { code: 500, data: 'uid不能为空' });
             }
         });
         wssServer.setRouter('sendGRP', (server, session, pack) => {
@@ -95,26 +95,26 @@ envContext.configure('development|production', 'home|chat', () => {
                 server.pushChannelCustom(pack.message.gid, 'onGRPMessage', pack.message.text, (uid, message) => {
                     return 'custom for ' + uid + '->' + message;//推给每个uid的数据都不一样，举例场景： 棋牌房间、网游场景等
                 });
-                server.response(session, pack, {code: 200, data: '发送成功'});
+                server.response(session, pack, { code: 200, data: '发送成功' });
             } else {
-                server.response(session, pack, {code: 500, data: 'gid不能为空'});
+                server.response(session, pack, { code: 500, data: 'gid不能为空' });
             }
         });
         wssServer.setRouter('sendGRP_rmc', (server, session, pack) => {
             if (pack.message.gid) {
                 server.callRemote('chat', 'sendGRP', pack.message);
-                server.response(session, pack, {code: 200, data: '发送成功'});
+                server.response(session, pack, { code: 200, data: '发送成功' });
             } else {
-                server.response(session, pack, {code: 500, data: 'gid不能为空'});
+                server.response(session, pack, { code: 500, data: 'gid不能为空' });
             }
         });
         wssServer.setRouter('sendALL', (server, session, pack) => {
             server.broadcast('onALLMessage', pack.message.text);
-            server.response(session, pack, {code: 200, data: '发送成功'});
+            server.response(session, pack, { code: 200, data: '发送成功' });
         });
         wssServer.setRouter('sendALL_rmc', (server, session, pack) => {
             server.callRemote('chat', 'sendALL', pack.message);
-            server.response(session, pack, {code: 200, data: '发送成功'});
+            server.response(session, pack, { code: 200, data: '发送成功' });
         });
         wssServer.setRouter('result_rmc', async (server, session, pack) => {
             const resp = await server.callRemoteForResult('chat', 'result', '外部home节点');
@@ -138,7 +138,7 @@ envContext.configure('development|production', 'home|chat', () => {
             server.clusterBroadcast('home', 'onALLMessage', pack.message.text);
         });
         wssServer.setRemote('result', (server, session, pack) => {
-            server.response(session, pack, {code: 200, data: pack.message + '->内部chat节点'});
+            server.response(session, pack, { code: 200, data: pack.message + '->内部chat节点' });
         });
     });
     //启动服务器
