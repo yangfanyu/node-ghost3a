@@ -1,9 +1,9 @@
 name: wssnet_ghost3a
-version: 3.1.29
+version: 3.2.0
 description: Websocket client for node-ghost3a, the server side was write by nodejs at https://github.com/yangfanyu/node-ghost3a
 dependencies:
-  crypto: ^2.1.3
-  encrypt: ^4.0.0
+  crypto: ^2.1.5
+  encrypt: ^4.0.3
 environment:
   sdk: '>=2.0.0 <3.0.0'
 authors:
