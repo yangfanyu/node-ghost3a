@@ -25,6 +25,9 @@ function testMongoMan() {
         const userArr = [{ name: 'name-1' }, { name: 'name-2' }, { name: 'name-3' }, { name: 'name-4' }];
         await mongo.insertMany(table, userArr);
         console.log('after insertMany json->', JSON.stringify(userArr));
+        //aggregate
+        const aggArr = await mongo.aggregate(table, [{ $match: {} }, { $group: { _id: '$name', cnt: { $sum: 1 } } }]);
+        console.log('aggregate result->', aggArr ? aggArr.length : null, aggArr);
         //createObjectID
         console.log(mongo.createObjectID());
         console.log(mongo.createObjectID());

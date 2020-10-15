@@ -291,6 +291,23 @@ class MongoMan {
         }
     };
     /**
+     * @param table {string}
+     * @param aggregatePipeline {Object[]}
+     * @param aggregateOptions {Object}
+     * @param tableOptions {Object}
+     * @return {Promise<Object[]>}
+     */
+    async aggregate(table, aggregatePipeline = undefined, aggregateOptions = undefined, tableOptions = undefined) {
+        try {
+            const result = await this._db.collection(table, tableOptions).aggregate(aggregatePipeline, aggregateOptions).toArray();
+            this._logger.debug(this._config.url, this._config.db, 'aggregate', ...arguments, result);
+            return result;
+        } catch (e) {
+            this._logger.error(this._config.url, this._config.db, 'aggregate', ...arguments, e.toString());
+            return null;
+        }
+    }
+    /**
      * @param table
      * @param tableOptions {Object}
      * @return {Collection}
