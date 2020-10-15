@@ -1,6 +1,6 @@
 {
     "name": "node-ghost3a",
-    "version": "3.2.0",
+    "version": "3.2.1",
     "private": false,
     "description": "Lightweight, web server, websocket server, websocket client. Cluster support. Simple and easy to use.",
     "main": "ghost3a.js",
