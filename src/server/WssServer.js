@@ -1,5 +1,5 @@
 'use strict';
-const uuid = require('uuid/v1');
+const { v1: uuid } = require('uuid');
 const WebSocket = require('ws');
 const CryptoJS = require('crypto-js');
 const https = require('https');

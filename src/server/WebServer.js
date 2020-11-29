@@ -5,7 +5,7 @@ const compress = require('compression');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const multer = require('multer');
-const uuid = require('uuid/v1');
+const { v1: uuid } = require('uuid');
 const https = require('https');
 const http = require('http');
 /**
